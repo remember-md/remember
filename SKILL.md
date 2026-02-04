@@ -11,20 +11,25 @@ description: >
 
 Your personal knowledge repository. Capture fast, organize automatically, retrieve instantly.
 
+## Brain Location
+
+**Fixed path:** `~/Documents/brainrepo/`
+
+This is not configurable. All brain data lives here.
+
 ## First Run Check
 
 **Before any action**, check if brainrepo is initialized:
 
-1. Look for brain folder with expected structure (Inbox/, Projects/, Areas/)
-2. **Default location:** `~/Documents/brainrepo/`
-3. If NOT found → **Run onboarding automatically**
-4. If found → Proceed with user request
+1. Check if `~/Documents/brainrepo/` exists with expected structure (Inbox/, Projects/, Areas/)
+2. If NOT found → **Run onboarding automatically**
+3. If found → Proceed with user request
 
 ## Onboarding
 
 Triggers automatically on first interaction, or when user says "set up brainrepo":
 
-1. Ask where to create the brain (default: `~/Documents/brainrepo/`)
+1. Create brain at `~/Documents/brainrepo/`
 2. Create the folder structure:
 
 ```bash
