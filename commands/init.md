@@ -15,11 +15,41 @@ Creates the BrainRepo directory structure and sets up your Second Brain.
 
 ## What it does
 
-### 1. Read Config
+### 1. Ask for Path
 
-Get `data_root` path from `~/.claude/plugins/brainrepo/config.json`:
-- Default: `~/brainrepo`
-- Or custom path if configured
+**Prompt user:**
+```
+🧠 BrainRepo Initialization
+
+Where should I create your Second Brain?
+
+Default: ~/brainrepo
+Custom: Enter full path (e.g., ~/Documents/my-brain)
+
+Path: ___
+```
+
+If user presses Enter → use default `~/brainrepo`  
+If user enters path → validate and use custom path
+
+**Validate path:**
+- Expand `~` to home directory
+- Check if writable
+- If exists, ask to confirm or choose different path
+
+### 1b. Update Config
+
+Write chosen path to `~/.claude/plugins/brainrepo/config.json`:
+
+```json
+{
+  "paths": {
+    "data_root": "/chosen/path"    // ⬅️ User's choice
+  }
+}
+```
+
+This ensures all future commands use the same path.
 
 ### 2. Create Directory Structure
 

@@ -49,30 +49,22 @@ BrainRepo is a Claude Code plugin that automatically builds and evolves your Sec
 git clone https://github.com/codezz/brainrepo.git ~/.claude/plugins/brainrepo
 ```
 
-### 2. Configure Path
-
-Edit `~/.claude/plugins/brainrepo/config.json`:
-
-```json
-{
-  "paths": {
-    "data_root": "~/brainrepo"    // ⬅️ Set your preferred path
-  }
-}
-```
-
-**Or keep default** (`~/brainrepo/`)
-
-### 3. Initialize
+### 2. Initialize
 
 Open Claude Code, run:
 ```
 /brain:init
 ```
 
-Follow prompts to create structure and identity.
+You'll be asked:
+1. **Where to create your brain?** (default: `~/brainrepo` or custom path)
+2. **Your name** (for identity)
+3. **Technical level** (technical / semi-technical / non-technical / chaotic)
+4. **Preferred language** (Romanian / English / Both)
 
-### 4. Work Normally
+BrainRepo creates the structure and you're ready!
+
+### 3. Work Normally
 
 Just use Claude Code! BrainRepo:
 - Captures 100% of activity (via hooks)
@@ -80,7 +72,7 @@ Just use Claude Code! BrainRepo:
 - Auto-populates your Second Brain
 - Learns your patterns
 
-### 5. Check Progress
+### 4. Check Progress
 
 ```
 /brain:status
@@ -88,7 +80,7 @@ Just use Claude Code! BrainRepo:
 
 See what's learned and what's ready to evolve.
 
-### 6. Evolve (When Ready)
+### 5. Evolve (When Ready)
 
 When 5+ patterns cluster:
 ```
@@ -187,17 +179,21 @@ Synthesizes 5+ instincts into:
 
 ## ⚙️ Configuration
 
-### Change Data Path
+### Change Data Path (After Init)
+
+Path is set during `/brain:init`, but you can change it later.
 
 Edit `~/.claude/plugins/brainrepo/config.json`:
 
 ```json
 {
   "paths": {
-    "data_root": "/custom/path/to/brain"
+    "data_root": "/new/path/to/brain"
   }
 }
 ```
+
+**Note:** This changes WHERE commands look for your brain, but doesn't move existing data. You'll need to manually move the folder if you want to relocate it.
 
 ### Tune Observer Frequency
 
