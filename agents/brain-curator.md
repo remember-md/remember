@@ -138,42 +138,66 @@ Content here with [[wikilinks]] to other notes.
 
 ### For Instincts (learning/instincts/personal/)
 
+**⚠️ IMPORTANT: Obsidian-Compatible YAML**
+
+**Frontmatter = Simple data only** (Obsidian cannot parse complex nested structures):
+
 ```yaml
 ---
-id: unique-id
-trigger: "when X happens"
+id: domain-NNN-short-name
+trigger: when X happens
 confidence: 0.7
 domain: code-style | workflow | communication | decision-making
 created: YYYY-MM-DD
 last_observed: YYYY-MM-DD
 observation_count: 5
-evidence:
-  - type: journal
-    link: "[[Journal/YYYY-MM-DD]]"
-    excerpt: "relevant excerpt"
-  - type: observation
-    timestamp: YYYY-MM-DDTHH:MM:SSZ
-    context: "what happened"
-brain_context:
-  related_notes: ["[[Note1]]"]
-  related_projects: ["[[Project1]]"]
-  related_people: ["[[Person1]]"]
+related_notes: ["[[content/Notes/note-title]]"]
+related_projects: ["[[content/Projects/project/project]]"]
+related_people: ["[[content/People/name]]"]
 ---
+```
 
+**Body = Complex details** (Markdown with evidence):
+
+```markdown
 # Pattern Name
 
 ## Trigger
 When this situation occurs...
 
+## Pattern
+Description of observed behavior
+
 ## Action
-Do this...
+What to do when triggered
+1. Step 1
+2. Step 2
 
 ## Reasoning
-Because...
+Why this pattern exists
 
 ## Evidence
-[Details from evidence array]
+
+**Observations:**
+- YYYY-MM-DDTHH:MM - Description of what happened
+- YYYY-MM-DDTHH:MM - Another observation
+
+**Notes & Journal:**
+- [[content/Journal/YYYY-MM-DD]] - Quote or context
+- [[content/Notes/note-title]] - Reference
+
+## Confidence
+XX% - Reasoning for confidence level
 ```
+
+**Rules:**
+- ❌ NO nested objects in frontmatter (evidence, brain_context)
+- ✅ Simple arrays OK: `related_notes: ["[[Note1]]", "[[Note2]]"]`
+- ✅ Evidence goes in body as Markdown, not frontmatter
+- ✅ Use timestamps in body for human readability
+- ✅ Link to journal/notes with context quotes
+
+See `references/instinct-format.md` for detailed examples.
 
 ## Important Rules
 
