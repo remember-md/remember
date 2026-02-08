@@ -66,13 +66,13 @@ The curator runs silently in background throughout the session.
 
 Provide brief context to user:
 ```
-Good morning Gabi! 🧠
+Good morning! 🧠
 
 Session #42 | Last: 2026-02-07
 
 Recent activity:
-- [[Projects/dollie|Dollie]] - worked on dashboard
-- Talked to [[People/cornel|Cornel]] yesterday
+- [[Projects/my-app|My App]] - worked on dashboard
+- Talked to [[People/alice|Alice]] yesterday
 
 Brain curator running in background.
 ```

@@ -165,11 +165,11 @@ After `/brain:init`, Supabrain creates:
 ├── content/                          # 🧠 Your Second Brain (PARA)
 │   ├── Inbox/                        # Brain dumps & quick captures
 │   ├── Projects/                     # Active projects (auto-created)
-│   │   ├── dollie/
+│   │   ├── my-app/
 │   │   ├── staxwp/
 │   │   └── personal-site/
 │   ├── People/                       # Contacts & collaborators (auto-captured)
-│   │   ├── cornel.md
+│   │   ├── alice.md
 │   │   ├── roxana.md
 │   │   └── clients/
 │   ├── Areas/                        # Life/work domains (auto-detected)
@@ -330,13 +330,13 @@ AI synthesizes 5+ instincts into:
 ```
 content/
 ├── Projects/         (5 projects auto-created)
-│   ├── dollie/
+│   ├── my-app/
 │   ├── staxwp/
 │   ├── supabrain/
 │   ├── minecraft-dash/
 │   └── 99-marketing/
 ├── People/           (8 people auto-captured)
-│   ├── cornel.md
+│   ├── alice.md
 │   ├── roxana.md
 │   ├── cezar.md
 │   └── clients/

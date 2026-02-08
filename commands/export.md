@@ -89,7 +89,7 @@ Include `manifest.json` in archive:
 {
   "export_date": "2026-02-08T15:00:00Z",
   "supabrain_version": "1.0.0",
-  "author": "Gabi",
+  "author": "User",
   "domains": {
     "code-style": {
       "count": 7,

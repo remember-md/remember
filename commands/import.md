@@ -42,7 +42,7 @@ Show what will be imported:
 ```
 📥 Import Preview
 
-Source: Gabi's instincts (2026-02-08)
+Source: User's instincts (2026-02-08)
 
 Domains to import:
 ✓ code-style (7 instincts, avg confidence 0.75)
@@ -95,13 +95,13 @@ For each imported instinct, prepend:
 ---
 # Original frontmatter...
 imported_from:
-  author: "Gabi"
+  author: "User"
   date: "2026-02-08"
   source_confidence: 0.75
 inherited: true
 ---
 
-> **Note:** This instinct was imported from [Gabi's patterns].
+> **Note:** This instinct was imported from [User's patterns].
 > Your mileage may vary - observe how it works for you.
 
 # [Original content...]
@@ -116,7 +116,7 @@ Update `~/supabrain/learning/meta/stats.json`:
   "imports": [
     {
       "date": "2026-02-08",
-      "author": "Gabi",
+      "author": "User",
       "instincts_count": 18,
       "domains": ["code-style", "workflow", "communication", "decision-making"],
       "namespace": "gabi-20260208"
@@ -130,7 +130,7 @@ Update `~/supabrain/learning/meta/stats.json`:
 ```
 ✅ Import Complete
 
-Imported 18 instincts from Gabi to:
+Imported 18 instincts from User to:
 ~/supabrain/learning/instincts/inherited/gabi-20260208/
 
 These instincts are kept SEPARATE from your personal learning.

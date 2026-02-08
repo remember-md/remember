@@ -22,7 +22,7 @@ Read `~/supabrain/learning/meta/identity.json`:
 ```
 🧠 BrainRepo Status
 
-Name: Gabi
+Name: User
 Technical Level: technical
 Sessions: 42
 First Session: 2026-02-01
@@ -37,12 +37,12 @@ Count entities in `content/`:
 📚 Second Brain Content
 
 Projects: 5 active
-  - dollie (last: today)
+  - my-app (last: today)
   - project-a (last: 2 days ago)
   - staxwp (last: 5 days ago)
 
 People: 8 total
-  - cornel (last contact: today)
+  - alice (last contact: today)
   - roxana (last contact: yesterday)
 
 Areas: 2 active
@@ -92,12 +92,12 @@ Run /brain:evolve to create evolved skills!
 📊 Recent Activity
 
 Projects worked on:
-- dollie: 15 sessions
+- my-app: 15 sessions
 - project-a: 8 sessions
 - staxwp: 3 sessions
 
 People interacted with:
-- cornel: 5 interactions
+- alice: 5 interactions
 - roxana: 2 interactions
 
 Patterns detected:

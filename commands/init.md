@@ -99,14 +99,14 @@ mkdir -p ~/supabrain/
 Ask user questions to create `identity.json`:
 
 **Questions:**
-1. What's your name? (default: Gabi)
+1. What's your name? (default: User)
 2. Technical level? (technical / semi-technical / non-technical / chaotic)
 3. Preferred language? (Romanian / English / Both)
 
 **Create `learning/meta/identity.json`:**
 ```json
 {
-  "name": "Gabi",
+  "name": "User",
   "technical_level": "technical",
   "language": "Romanian",
   "sessions_count": 0,
