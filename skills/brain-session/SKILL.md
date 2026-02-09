@@ -18,12 +18,14 @@ Loads Second Brain context at session start.
 
 **You MUST read the config file before doing anything else.** Do NOT assume or hardcode any path.
 
-1. Read file: `${CLAUDE_PLUGIN_ROOT}/config.json`
-2. Parse JSON → extract `paths.data_root` value
-3. Expand `~` to the user's home directory
-4. Use this resolved path as `{brain_path}` for ALL subsequent operations
+Try these locations in order, use the first one that exists:
+1. `~/.claude/plugin-config/remember/config.json` (user scope, persistent)
+2. `.claude/plugin-config/remember/config.json` (project scope, persistent)
+3. `${CLAUDE_PLUGIN_ROOT}/config.defaults.json` (shipped default)
 
-If config file doesn't exist → tell user to run `/brain:init`.
+Parse JSON → extract `paths.data_root` value. Expand `~` to the user's home directory. Use this resolved path as `{brain_path}` for ALL subsequent operations.
+
+If no config file exists → tell user to run `/brain:init`.
 
 ### 2. Load Persona
 
