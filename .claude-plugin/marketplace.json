@@ -1,0 +1,22 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "remember-md",
+  "description": "Remember - Extended Second Brain for Claude Code",
+  "owner": {
+    "name": "remember-md",
+    "email": "hello@remember-md.com"
+  },
+  "plugins": [
+    {
+      "name": "remember",
+      "description": "Extended Second Brain that learns as you work in Claude Code",
+      "version": "1.0.0",
+      "author": {
+        "name": "remember-md"
+      },
+      "source": "..",
+      "category": "productivity",
+      "homepage": "https://github.com/remember-md/remember"
+    }
+  ]
+}
