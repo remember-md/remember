@@ -19,7 +19,7 @@ Reads unprocessed Claude Code transcripts and routes valuable content into your 
 
 ### 1. Resolve Brain Path
 
-Read `${CLAUDE_PLUGIN_ROOT}/config.json` → get `paths.data_root`.
+Read config from `~/.claude/plugin-config/remember/config.json` (user scope) or `.claude/plugin-config/remember/config.json` (project scope), falling back to `${CLAUDE_PLUGIN_ROOT}/config.defaults.json` → get `paths.data_root`.
 Expand `~` to home directory. Use this as `{brain_path}`. If missing → tell user to run `/brain:init`.
 
 ### 2. Find Unprocessed Sessions

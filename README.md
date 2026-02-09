@@ -75,17 +75,26 @@ On every `UserPromptSubmit`, `scripts/user_prompt.sh` runs:
 
 ## Configuration
 
-`/brain:init` creates `config.json` in the plugin directory with your chosen path. This file is gitignored so it survives `git pull` updates.
+`/brain:init` saves your chosen brain path to a persistent config that survives plugin updates.
+
+Config location:
+- **User scope** (default): `~/.claude/plugin-config/remember/config.json`
+- **Project scope**: `.claude/plugin-config/remember/config.json`
 
 The plugin reads config in this order:
-1. `config.json` — your custom config (created by `/brain:init`)
-2. `config.defaults.json` — shipped defaults (`~/remember`)
+1. User-scope config (persistent, created by `/brain:init`)
+2. Project-scope config (persistent)
+3. `config.defaults.json` shipped with the plugin (`~/remember`)
 
-To change your brain location after init, edit `config.json` in the plugin directory:
+To change your brain location after init:
+
+```bash
+# Edit the config
+cat ~/.claude/plugin-config/remember/config.json
+```
 
 ```json
 {
-  "version": "1.1.0",
   "paths": {
     "data_root": "~/my-custom-path"
   }

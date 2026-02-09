@@ -58,7 +58,8 @@ Process past sessions: /brain:process
 
 ## Configuration
 
-User config: `${CLAUDE_PLUGIN_ROOT}/config.json`
+User config is at `~/.claude/plugin-config/remember/config.json` (user scope) or `.claude/plugin-config/remember/config.json` (project scope).
+
 ```json
 {
   "paths": {
@@ -67,7 +68,7 @@ User config: `${CLAUDE_PLUGIN_ROOT}/config.json`
 }
 ```
 
-**IMPORTANT:** Always read this file. Never use hardcoded paths.
+**IMPORTANT:** Always read the config. Never use hardcoded paths. Check user-scope config first, then project-scope, then `${CLAUDE_PLUGIN_ROOT}/config.defaults.json`.
 
 ## Error Handling
 

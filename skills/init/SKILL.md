@@ -36,7 +36,17 @@ If user enters path → validate and use custom path
 
 ### 2. Save Config
 
-Write chosen path to `${CLAUDE_PLUGIN_ROOT}/config.json`:
+Determine config location based on install scope:
+- If installed at **user scope** (default) → `~/.claude/plugin-config/remember/config.json`
+- If installed at **project scope** → `.claude/plugin-config/remember/config.json`
+
+To detect scope: if `${CLAUDE_PLUGIN_ROOT}` contains `/.claude/plugins/cache/`, it's user scope. Otherwise, check if it's under a project directory for project scope.
+
+Create the directory and write the config:
+
+```bash
+mkdir -p ~/.claude/plugin-config/remember
+```
 
 ```json
 {
@@ -45,6 +55,8 @@ Write chosen path to `${CLAUDE_PLUGIN_ROOT}/config.json`:
   }
 }
 ```
+
+This location persists across plugin updates (it's outside the plugin cache).
 
 ### 3. Add Permissions
 

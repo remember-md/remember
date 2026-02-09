@@ -18,10 +18,19 @@ from pathlib import Path
 
 
 def get_brain_root():
-    """Resolve brain root: config.json (user) → config.defaults.json (shipped) → ~/remember."""
+    """Resolve brain root from config. Search order:
+    1. ~/.claude/plugin-config/remember/config.json  (user scope, persistent)
+    2. .claude/plugin-config/remember/config.json    (project scope, persistent)
+    3. ${PLUGIN_ROOT}/config.defaults.json           (shipped default)
+    4. Hardcoded ~/remember
+    """
     plugin_dir = Path(__file__).resolve().parent.parent
-    for name in ("config.json", "config.defaults.json"):
-        config_path = plugin_dir / name
+    config_candidates = [
+        Path.home() / ".claude" / "plugin-config" / "remember" / "config.json",
+        Path(".claude") / "plugin-config" / "remember" / "config.json",
+        plugin_dir / "config.defaults.json",
+    ]
+    for config_path in config_candidates:
         if not config_path.exists():
             continue
         try:

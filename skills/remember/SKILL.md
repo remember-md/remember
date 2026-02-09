@@ -15,8 +15,8 @@ Your personal knowledge repository. Two ways to populate it:
 
 ## Brain Location
 
-Read `${CLAUDE_PLUGIN_ROOT}/config.json` → `paths.data_root`.
-Default: `~/remember/`
+Read config from `~/.claude/plugin-config/remember/config.json` (user scope) or `.claude/plugin-config/remember/config.json` (project scope) → `paths.data_root`.
+Falls back to `${CLAUDE_PLUGIN_ROOT}/config.defaults.json` → `~/remember/`.
 
 ## First Run Check
 

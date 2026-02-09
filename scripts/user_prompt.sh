@@ -12,9 +12,16 @@ INPUT=$(cat)
 # Resolve plugin root — use env var, fall back to script-relative path
 PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}"
 
-# Read brain path: config.json (user) → config.defaults.json (shipped) → ~/remember
+# Read brain path from config. Search order:
+#   1. ~/.claude/plugin-config/remember/config.json  (user scope, persistent)
+#   2. .claude/plugin-config/remember/config.json    (project scope, persistent)
+#   3. ${PLUGIN_ROOT}/config.defaults.json           (shipped default)
+#   4. Hardcoded ~/remember
 BRAIN_PATH=""
-for cfg in "${PLUGIN_ROOT}/config.json" "${PLUGIN_ROOT}/config.defaults.json"; do
+for cfg in \
+  "$HOME/.claude/plugin-config/remember/config.json" \
+  ".claude/plugin-config/remember/config.json" \
+  "${PLUGIN_ROOT}/config.defaults.json"; do
   [ -f "$cfg" ] || continue
   BRAIN_PATH=$(python3 -c "
 import json
