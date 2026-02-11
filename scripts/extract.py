@@ -16,38 +16,13 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-
-def get_brain_root():
-    """Resolve brain root from config. Search order:
-    1. ~/.claude/plugin-config/remember/config.json  (user scope, persistent)
-    2. .claude/plugin-config/remember/config.json    (project scope, persistent)
-    3. ${PLUGIN_ROOT}/config.defaults.json           (shipped default)
-    4. Hardcoded ~/remember
-    """
-    plugin_dir = Path(__file__).resolve().parent.parent
-    config_candidates = [
-        Path.home() / ".claude" / "plugin-config" / "remember" / "config.json",
-        Path(".claude") / "plugin-config" / "remember" / "config.json",
-        plugin_dir / "config.defaults.json",
-    ]
-    for config_path in config_candidates:
-        if not config_path.exists():
-            continue
-        try:
-            with open(config_path, encoding="utf-8") as f:
-                config = json.load(f)
-            data_root = config.get("paths", {}).get("data_root", "")
-            if data_root:
-                return Path(os.path.expanduser(data_root))
-        except (json.JSONDecodeError, OSError):
-            continue
-    return Path.home() / "remember"
+from config import load_config, get_brain_root
 
 
 BRAIN_ROOT = get_brain_root()
 PROCESSED_FILE = BRAIN_ROOT / ".processed_sessions"
 CLAUDE_PROJECTS_DIR = Path.home() / ".claude" / "projects"
-MAX_ASSISTANT_TEXT_LEN = 500
+MAX_ASSISTANT_TEXT_LEN = load_config()["extract"]["max_assistant_text_len"]
 
 
 def get_processed_sessions():
