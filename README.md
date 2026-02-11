@@ -2,9 +2,9 @@
 
 > **Your second brain, in your terminal.** Zero-effort knowledge capture for developers who use Claude Code.
 
-Unlike Mem.ai or Reflect, Remember is **free**, **local-first**, and captures **100% of your knowledge deterministically** — no AI guessing, no cloud lock-in, no $10/month subscriptions. Just plain markdown files that work with Obsidian, Logseq, or any text editor.
+Remember is a **free**, **local-first**, **open-source** Claude Code plugin that captures your knowledge **deterministically** — plain markdown files that work with Obsidian, Logseq, or any text editor.
 
-Remember is an open-source Claude Code plugin that automatically builds your second brain using **PARA + Zettelkasten** methodology. Say "remember this" during any coding session, and your knowledge lands in the right place — People, Projects, Notes, Journal — without you organizing anything.
+It automatically builds your second brain using **PARA + Zettelkasten** methodology. Say "remember this" during any coding session, and your knowledge lands in the right place — People, Projects, Notes, Journal — without you organizing anything.
 
 **This is not another note-taking app.** This is an AI-powered knowledge base that captures while you work.
 
@@ -16,40 +16,37 @@ Every second brain tool asks you to do the work. Remember does it for you.
 
 | Feature | Remember | Mem.ai | Reflect | Notion AI |
 |---------|----------|--------|---------|-----------|
-| **Price** | **Free (OSS)** | $12/mo | $10/mo | $10/mo |
-| **Capture Rate** | **100% (hooks)** | ~60% AI guess | ~60% AI guess | Manual |
+| **Model** | **Free & Open Source** | Subscription | Subscription | Freemium |
+| **Capture** | **100% (deterministic hooks)** | AI-based | AI-based | Manual |
 | **Privacy** | **Local-first** | Cloud | Cloud | Cloud |
 | **Data Ownership** | **Full (Git)** | Limited | Limited | Locked-in |
 | **Offline** | ✅ Yes | ❌ No | ❌ No | ❌ No |
 | **Obsidian Compatible** | ✅ Yes | ❌ No | ❌ No | ⚠️ Export only |
 | **Open Source** | ✅ Yes | ❌ No | ❌ No | ❌ No |
-| **Vendor Lock-in** | **None** | High | Medium | High |
-
-**Remember is the free, open-source alternative to Mem.ai and Reflect** — with better capture rates and full data ownership.
 
 ---
 
 ## What Makes Remember Different
 
-### 🎯 100% Capture Rate (Not AI Guessing)
+### 🎯 100% Deterministic Capture
 
-Mem.ai and Reflect use AI to *guess* what's important — and miss ~40% of valuable content. Remember uses **deterministic hooks** that trigger on explicit commands. When you say "remember this," it captures. Every. Single. Time.
+Hooks-based capture (not AI inference) means nothing gets missed. When you say "remember this," it captures. Every. Single. Time. No probabilistic filtering — just reliable, predictable knowledge capture.
 
-### 🔒 Privacy-First, Local-First Knowledge Management
+### 🔒 Privacy-First & Local
 
-Your notes never leave your machine. No cloud servers, no terms of service on your thoughts, no data mining. Remember stores everything as **plain markdown files** in a Git-friendly directory. Your second brain is truly yours.
+Your data lives on your machine, in Git-friendly markdown. No cloud servers, no terms of service on your thoughts. Your second brain is truly yours.
 
-### 🆓 Free Forever (Not $120/Year)
+### 🆓 Free & Open Source
 
-Mem.ai charges $12/month. Reflect charges $10/month. Notion AI charges $10/month. That's **$120+/year** for basic automatic note-taking. Remember is **100% free and open source**. Forever. No bait-and-switch pricing.
+MIT licensed, community-driven, transparent development. The core plugin will always be free and open source.
 
-### 🧠 AI-Native, Not AI-Bolted-On
+### 🧠 AI-Native Architecture
 
-Unlike Notion AI or Obsidian's community AI plugins, Remember was built *around* Claude from day one. The AI isn't an add-on — it's the interface. Claude understands PARA methodology, routes your knowledge automatically, and even builds a **Persona.md** that learns how you think.
+Built for Claude Code from day one, designed for AI collaboration. The AI isn't an add-on — it's the interface. Claude understands PARA methodology, routes your knowledge automatically, and builds a **Persona.md** that learns how you think.
 
-### 🔗 Obsidian Compatible (Best of Both Worlds)
+### 🔗 Obsidian-Native
 
-Unlike Mem.ai's proprietary format or Reflect's closed ecosystem, Remember creates **Obsidian-compatible markdown** with wikilinks, frontmatter, and PARA structure. Use Remember for AI-powered capture, Obsidian for beautiful browsing and graph view.
+PARA + Zettelkasten structure that works with your existing workflow. Remember creates **Obsidian-compatible markdown** with wikilinks, frontmatter, and full graph view support. Use Remember for AI-powered capture, Obsidian for beautiful browsing.
 
 ---
 
@@ -58,11 +55,11 @@ Unlike Mem.ai's proprietary format or Reflect's closed ecosystem, Remember creat
 ✅ **You want a second brain but maintaining it feels like a second job**
 ✅ **You use Claude Code daily and want automatic knowledge capture**
 ✅ **You value privacy and data ownership (local-first, Git-friendly)**
-✅ **You're tired of $10/mo subscriptions for basic note-taking**
+✅ **You prefer open source and local-first tools**
+✅ **You want full control over your data and workflow**
 ✅ **You want Obsidian's power + AI automation**
-✅ **You're looking for a free Mem.ai alternative or Notion alternative**
 
-❌ Not for you if: You need mobile apps or cloud sync (coming in Pro version)
+❌ Not for you if: You need mobile apps or cloud sync (coming in Remember Pro)
 
 ---
 
@@ -141,7 +138,7 @@ Remember organizes your knowledge base using PARA + Zettelkasten:
 | `SessionStart` | Session begins | Loads `Persona.md` into Claude's context |
 | `UserPromptSubmit` | Every message | Detects brain dump keywords, injects routing rules |
 
-`SessionStart` fires once and injects your Persona as model-visible context. `UserPromptSubmit` only activates when it detects keywords like "remember this" — then it injects the full routing instructions (existing People, Projects, Areas) so Claude knows where to write. **This deterministic capture is why Remember achieves 100% capture rate** — unlike AI-guessing approaches used by Mem.ai or Reflect.
+`SessionStart` fires once and injects your Persona as model-visible context. `UserPromptSubmit` only activates when it detects keywords like "remember this" — then it injects the full routing instructions (existing People, Projects, Areas) so Claude knows where to write. **This deterministic approach achieves 100% capture rate** — every trigger is handled reliably and predictably.
 
 ### Processing (Manual)
 
@@ -153,7 +150,7 @@ Remember organizes your knowledge base using PARA + Zettelkasten:
 
 ### Persona — An AI That Learns How You Think
 
-`Persona.md` lives at your brain root and captures how you prefer to work — communication style, code preferences, workflow habits. It's loaded at every session start and updated during `/brain:process`. **No other second brain tool has this.** Not Mem.ai, not Reflect, not Notion AI.
+`Persona.md` lives at your brain root and captures how you prefer to work — communication style, code preferences, workflow habits. It's loaded at every session start and updated during `/brain:process`. This adaptive persona system is a core part of what makes Remember unique.
 
 ---
 
@@ -208,23 +205,32 @@ Obsidian handles backlinks automatically — you only need to link forward.
 
 ## FAQ
 
-**Q: How is this different from Mem.ai or Reflect?**
-A: Remember is free, local-first, and captures 100% of your work deterministically (not AI guessing). Your data stays on your machine in Git-friendly markdown. No subscription, no cloud lock-in.
+**Q: How does Remember compare to other Second Brain tools?**
+A: Remember is free and open source, with a focus on local-first privacy and deterministic capture. Tools like Mem.ai and Reflect offer cloud sync and mobile apps (great features!), while Remember prioritizes data ownership and transparency. Choose what fits your workflow best!
 
 **Q: Can I use this with Obsidian?**
-A: Yes! Remember creates Obsidian-compatible markdown with wikilinks, frontmatter, and PARA structure. It's the best free Obsidian AI plugin for automatic note-taking.
+A: Yes! Remember creates Obsidian-compatible markdown with wikilinks, frontmatter, and PARA structure. It's a great Obsidian companion for automatic note-taking.
 
 **Q: Is there a cloud/mobile version?**
-A: Not yet. The free second brain plugin is local-only. A Pro cloud version with sync and mobile apps is planned.
+A: Not yet — see [Future Plans](#future-plans) below. The core plugin is local-only and always will be free.
 
 **Q: How much does it cost?**
-A: The plugin is 100% free and open source. Forever. No trials, no limits, no bait-and-switch.
-
-**Q: What about Notion AI?**
-A: Notion AI is a walled garden — your data is cloud-locked in proprietary format. Remember uses plain markdown you can take anywhere. Plus, Notion AI requires manual capture; Remember captures automatically.
+A: The core plugin is 100% free and open source. Always. Pro features (cloud, mobile) will be opt-in for those who want them.
 
 **Q: Do I need Obsidian to use Remember?**
 A: No. Remember works with any markdown editor. But Obsidian gives you the best experience with graph view, backlinks, and community plugins.
+
+---
+
+## Future Plans
+
+**Remember Pro (Coming Soon)**
+- ☁️ Cloud sync across devices
+- 📱 Mobile apps (iOS & Android)
+- 🌐 Web dashboard
+- 👥 Team collaboration
+
+The core plugin will always remain free and open source. Pro features are opt-in for those who want them.
 
 ---
 
@@ -246,7 +252,7 @@ A: No. Remember works with any markdown editor. But Obsidian gives you the best 
 
 ## Compatibility
 
-Works with any markdown editor. Optimized for **Obsidian** (wikilinks, backlinks, graph view). Great as a free alternative to Mem.ai, Reflect, or Notion AI for developers who want local-first knowledge management.
+Works with any markdown editor. Optimized for **Obsidian** (wikilinks, backlinks, graph view).
 
 ---
 
@@ -263,6 +269,6 @@ MIT — see [LICENSE](LICENSE).
 
 ---
 
-**Remember: The free, open-source second brain that builds itself.** Stop paying $120/year for AI note-taking. Start capturing knowledge automatically.
+**Remember: The free, open-source second brain that builds itself.** Start capturing knowledge automatically.
 
 ⭐ [Star on GitHub](https://github.com/remember-md/remember) if this is useful!
