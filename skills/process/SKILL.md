@@ -15,19 +15,24 @@ Reads unprocessed Claude Code transcripts and routes valuable content into your 
 /brain:process --project myproject
 ```
 
-## Important: Use Built-in Tools (NO Bash!)
+## ⚠️ MANDATORY: Use Built-in Tools Only (NO Bash!)
 
-**Use built-in tools (LS, Glob, Grep, Read) instead of Bash commands for brain operations. These are auto-approved and don't require permission prompts.**
+**NEVER use Bash commands for brain operations.** Use Claude Code's built-in tools which are auto-approved and require zero permission prompts:
 
-**Do NOT use Bash to check env vars.** `$REMEMBER_BRAIN_PATH` is already set — use it directly in Read/Write/LS paths without echoing it first.
+| Operation | ✅ Use This | ❌ NOT This |
+|-----------|------------|-------------|
+| List files | `LS` tool | `bash ls` |
+| Find files | `Glob` tool | `bash find` |
+| Search content | `Grep` tool | `bash grep` |
+| Read files | `Read` tool | `bash cat` |
+| Write/create files | `Write` tool | `bash echo >` / `bash tee` |
+| Count files | `Glob` tool + count results | `bash wc` |
+| Check env vars | Already available as `$REMEMBER_BRAIN_PATH` | `bash echo $VAR` |
 
-- List files → use `LS` tool (not `bash ls`)
-- Find files by pattern → use `Glob` tool (not `bash find`)
-- Search content → use `Grep` tool (not `bash grep`)
-- Read files → use `Read` tool (not `bash cat`)
-- Write/create files → use `Write` tool (not `bash echo >` or `bash tee`)
+**For complex operations** (stats, counting, multi-step), use a **subagent** (Task tool) that uses the same built-in tools.
 
-Note: Python scripts (extract.py) still use Bash — that's expected. This applies to brain directory operations.
+**Why:** `additionalDirectories` auto-approves LS/Glob/Grep/Read/Write. Bash always prompts.
+
 
 ## Steps
 
