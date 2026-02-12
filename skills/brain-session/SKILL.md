@@ -1,84 +1,67 @@
 ---
 name: brain-session
-description: Remember session context loader - loads Second Brain context
-version: 1.1.0
+description: >
+  Load your Persona at session start. This hooks into SessionStart to inject behavioral
+  patterns and preferences from Persona.md into every conversation.
 ---
 
-# Brain Session
+# brain-session — Session Start Hook
 
-Loads Second Brain context at session start.
+Loads `Persona.md` from your brain at the start of each Claude Code session, so Claude knows your preferences, patterns, and communication style.
 
-## When to use
+## How It Works
 
-**Automatically** at the start of every Claude Code session.
+1. **SessionStart hook triggers** — runs automatically when a new Claude session begins
+2. **Resolve brain path** — read config → `paths.data_root`
+3. **Check for Persona.md** — look for `{brain_path}/Persona.md`
+4. **Inject as context** — if found, prepend Persona content to session
+5. **Show brain stats** — quick overview of your brain structure
 
-## What it does
+## What Gets Loaded
 
-### 1. Resolve Brain Path (MANDATORY FIRST STEP)
+**Persona.md** contains:
+- Communication preferences (tone, language, formality)
+- Workflow patterns (how you work, habits)
+- Decision-making criteria (what you prioritize)
+- Code style preferences (naming, frameworks, structure)
+- Evidence log (dated observations from past sessions)
 
-**You MUST read the config file before doing anything else.** Do NOT assume or hardcode any path.
+This is how Claude gets smarter about working with you over time.
 
-Try these locations in order, use the first one that exists:
-1. `~/.claude/plugin-config/remember/config.json` (user scope, persistent)
-2. `.claude/plugin-config/remember/config.json` (project scope, persistent)
-3. `${CLAUDE_PLUGIN_ROOT}/config.defaults.json` (shipped default)
+## Brain Stats Display
 
-Parse JSON → extract `paths.data_root` value. Expand `~` to the user's home directory. Use this resolved path as `{brain_path}` for ALL subsequent operations.
+Shows a quick overview at session start:
 
-If no config file exists → tell user to run `/brain:init`.
-
-### 2. Load Persona
-
-**Read `{brain_path}/Persona.md` FIRST.** This file contains behavioral patterns and preferences. Apply them throughout the entire session.
-
-### 3. Load Recent Context
-
-Read recent Second Brain content:
-
-**Today's Journal (if exists):**
-Read `{brain_path}/Journal/YYYY-MM-DD.md` (today's date)
-
-**Active Projects:**
-List projects with recent activity (last 7 days)
-
-**Recent People:**
-List recently modified files in `{brain_path}/People/`
-
-### 4. Greet with Context
-
-Provide brief context (apply Persona preferences — concise, Romanian if appropriate):
 ```
-Session loaded | Brain: {brain_path}
+🧠 Brain loaded (~/remember/)
 
-Recent:
-- [[Projects/impact3|Impact3]] - last active today
-- [[People/archie]] - last contact yesterday
+Recent activity:
+- [[Projects/myproject|MyProject]] - last active today
+- [[Projects/another-project|AnotherProject]] - last active yesterday
 
-Capture: say "remember this: ..."
-Process past sessions: /brain:process
+People:
+- [[People/john-smith]] - last contact yesterday
+- [[People/jane-doe]] - last contact 3 days ago
+
+Tasks:
+- 5 in Focus
+- 12 in Next Up
+
+Journal: 45 entries
+
+Commands: /brain:init | /brain:process | /brain:status
 ```
 
-## Configuration
+## File Location
 
-User config is at `~/.claude/plugin-config/remember/config.json` (user scope) or `.claude/plugin-config/remember/config.json` (project scope).
+- **Persona.md** — `{brain_path}/Persona.md`
+- Updated by `/brain:process` when behavioral patterns are detected
 
-```json
-{
-  "paths": {
-    "data_root": "/path/to/brain"
-  }
-}
-```
+## Config
 
-**IMPORTANT:** Always read the config. Never use hardcoded paths. Check user-scope config first, then project-scope, then `${CLAUDE_PLUGIN_ROOT}/config.defaults.json`.
+Reads config from:
+1. `~/.claude/plugin-config/remember/config.json` (user scope)
+2. `.claude/plugin-config/remember/config.json` (project scope)
+3. Falls back to `${CLAUDE_PLUGIN_ROOT}/config.defaults.json`
 
-## Error Handling
-
-If config file missing or brain path doesn't exist:
-- Tell user to run `/brain:init`
-- Minimal greeting
-
-## Notes
-
-- Runs **once** per session at start
-- No background agents — brain is populated via brain dump keywords or `/brain:process`
+Uses `paths.data_root` for brain location.

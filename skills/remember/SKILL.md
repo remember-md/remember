@@ -33,9 +33,20 @@ Falls back to `${CLAUDE_PLUGIN_ROOT}/config.defaults.json` → `~/remember/`.
 remember/
 ├── Inbox/          # Quick capture (clear daily)
 ├── Projects/       # Active work with deadlines
+│   └── <name>/
+│       ├── <name>.md           # Project overview
+│       ├── Meetings/           # Meeting notes
+│       └── *.md                # Technical docs, specs
 ├── Areas/          # Ongoing responsibilities (flat files)
+│   ├── career.md
+│   ├── health.md
+│   ├── family.md
+│   └── finances.md
 ├── Notes/          # Permanent knowledge, learnings, decisions
 ├── Resources/      # External links, articles, references
+│   ├── articles/
+│   ├── tools/
+│   └── books/
 ├── Journal/        # Daily notes (YYYY-MM-DD.md)
 ├── People/         # One note per person
 ├── Tasks/          # Centralized task tracking (tasks.md)
@@ -62,20 +73,77 @@ Uses `scripts/extract.py` to parse JSONL transcripts into clean markdown, then r
 
 ## Routing Rules
 
-| Content | Destination |
-|---------|------------|
-| Person interaction | `People/{name}.md` |
-| Task / TODO | `Tasks/tasks.md` |
-| Project work | `Projects/{name}/{name}.md` |
-| Technical learning | `Notes/{topic}.md` |
-| Decision | `Notes/decision-{topic}.md` |
-| Daily summary | `Journal/YYYY-MM-DD.md` |
-| Career/professional | `Areas/career.md` |
-| Health/fitness | `Areas/health.md` |
-| Family | `Areas/family.md` |
-| Finances | `Areas/finances.md` |
-| Links/articles | `Resources/` |
-| Unclear | `Inbox/` |
+### Content Type → Destination
+
+| Content | Decision Logic | Destination |
+|---------|----------------|-------------|
+| Time-bound work with deadline | Is it a project? | `Projects/{name}/{name}.md` |
+| Ongoing responsibility | No deadline, recurring | `Areas/{area}.md` |
+| One-off learning | Single insight | `Notes/{topic}.md` |
+| Person interaction | Meaningful contact | `People/{name}.md` |
+| Task with deadline this week | Urgent | `Tasks/tasks.md` (Focus) |
+| Task without deadline | Important | `Tasks/tasks.md` (Next Up) |
+| Future/roadmap task | Backlog | `Projects/{name}/{name}.md` (Tasks) |
+| Meeting | Structured notes | `Projects/{name}/Meetings/{date}-{type}.md` |
+| Technical doc | Project-specific | `Projects/{name}/{descriptive}.md` |
+| Decision | Strategic choice | `Notes/decision-{topic}.md` |
+| External URL | Resource | `Resources/{type}/{title}.md` |
+| Daily summary | Journal | `Journal/YYYY-MM-DD.md` |
+
+### Areas Intelligence
+
+**Decision Tree:**
+
+1. **Is it time-bound with a deadline?** → YES = Project
+2. **Is it ongoing responsibility?** → YES = Area
+3. **Otherwise** → Note (one-off insight)
+
+**Examples:**
+- "Started running every morning" → `Areas/health.md` (ongoing habit)
+- "Q1 marketing campaign" → `Projects/q1-marketing/` (time-bound)
+- "Learned async patterns" → `Notes/async-patterns.md` (one-off learning)
+
+**Default Areas:** `career.md`, `health.md`, `family.md`, `finances.md`
+
+### Task Routing Intelligence
+
+**Auto-classification based on urgency:**
+
+| Urgency | Keywords | Destination |
+|---------|----------|-------------|
+| **URGENT** | "by Friday", "asap", "urgent", "today", deadline this week | `Tasks/tasks.md` (Focus, max 10) |
+| **IMPORTANT** | "should", "need to", "reminder", no deadline | `Tasks/tasks.md` (Next Up, max 15) |
+| **BACKLOG** | "eventually", "Phase X", "v2", "future" | `Projects/{name}/{name}.md` (Tasks/Backlog) |
+
+**Examples:**
+- "Deploy site by Friday" → Focus (deadline keyword)
+- "Research payment options" → Next Up (no deadline)
+- "Phase 2 dashboard features" → Project backlog (future scope)
+
+### Resource Capture Intelligence
+
+**When user shares a URL:**
+
+1. **Fetch metadata** — use `web_fetch(url)` to extract title, author, summary
+2. **Classify type** — article, tool, video, book, documentation
+3. **Create rich note** in `Resources/{type}/{title}.md`:
+   - Auto-extracted summary
+   - Key takeaways
+   - Why it matters (from context)
+   - Related links to Projects/Notes
+4. **Auto-link** — connect to relevant content in brain
+
+### Persona Learning
+
+**Behavioral pattern extraction** during `/brain:process`:
+
+- User corrections → preferences
+- Repeated workflows → habits
+- Communication style → tone/language
+- Decision criteria → priorities
+- Code style → technical preferences
+
+Updates `Persona.md` with evidence-based learning.
 
 ## Note Format
 
@@ -123,6 +191,8 @@ This is how Claude gets smarter about working with you over time.
 Use `[[wiki-links]]` to connect notes:
 
 ```markdown
-Met with [[People/archie]] about [[Projects/impact3/impact3|Impact3]].
-Relevant insight: [[Notes/n8n-workflow-patterns]]
+Met with [[People/john-smith]] about [[Projects/myproject/myproject|MyProject]].
+Relevant insight: [[Notes/async-patterns]]
 ```
+
+Obsidian handles backlinks automatically — link forward, don't duplicate.
