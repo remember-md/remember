@@ -10,7 +10,7 @@
     {
       "name": "remember",
       "description": "Second Brain plugin for Claude Code — PARA + Zettelkasten in Obsidian-native markdown",
-      "version": "1.2.0",
+      "version": "1.4.0",
       "author": {
         "name": "Gabi Fratica"
       },
