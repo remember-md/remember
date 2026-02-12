@@ -50,14 +50,23 @@ Also ask: **"Install globally or for this project?"** to let the user override t
     "REMEMBER_BRAIN_PATH": "/chosen/path"
   },
   "permissions": {
-    "additionalDirectories": ["/chosen/path"]
+    "additionalDirectories": ["/chosen/path"],
+    "allow": [
+      "Bash(* /chosen/path*)",
+      "Bash(echo *)",
+      "Read(~/.claude/**)",
+      "Edit(~/.claude/**)"
+    ]
   }
 }
 ```
 
+**Note:** `/chosen/path` in Bash rules must be the **expanded absolute path** (not `~/`), because Bash rules match against the actual command string. Use the same path as in `REMEMBER_BRAIN_PATH`.
+
 **Merge rules:**
 - `env`: add/update the `REMEMBER_BRAIN_PATH` key, keep other env vars
 - `permissions.additionalDirectories`: append the brain path if not already present, keep existing entries
+- `permissions.allow`: append these rules if not already present, keep existing entries
 - All other keys: preserve unchanged
 
 Write the merged JSON back to the settings file.
