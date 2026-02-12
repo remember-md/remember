@@ -13,6 +13,15 @@ Your personal knowledge repository. Two ways to populate it:
 1. **Brain Dump** (immediate) — Say "remember this: ..." and content routes to the right place
 2. **Process Sessions** (on-demand) — Run `/brain:process` to extract value from past Claude sessions
 
+## Important: Use Built-in Tools
+
+**Use built-in tools (LS, Glob, Grep, Read) instead of Bash commands for brain operations. These are auto-approved and don't require permission prompts.**
+
+- List files → use `LS` tool (not `bash ls`)
+- Find files by pattern → use `Glob` tool (not `bash find`)
+- Search content → use `Grep` tool (not `bash grep`)
+- Read files → use `Read` tool (not `bash cat`)
+
 ## Brain Location
 
 Read `$REMEMBER_BRAIN_PATH` env var, fallback `~/remember`.

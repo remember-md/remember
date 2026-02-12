@@ -15,6 +15,17 @@ Reads unprocessed Claude Code transcripts and routes valuable content into your 
 /brain:process --project myproject
 ```
 
+## Important: Use Built-in Tools
+
+**Use built-in tools (LS, Glob, Grep, Read) instead of Bash commands for brain operations. These are auto-approved and don't require permission prompts.**
+
+- List files → use `LS` tool (not `bash ls`)
+- Find files by pattern → use `Glob` tool (not `bash find`)
+- Search content → use `Grep` tool (not `bash grep`)
+- Read files → use `Read` tool (not `bash cat`)
+
+Note: Python scripts (extract.py) still use Bash — that's expected. This applies to brain directory operations.
+
 ## Steps
 
 ### 1. Resolve Brain Path

@@ -10,6 +10,15 @@ version: 1.4.0
 
 Loads `Persona.md` from your brain at the start of each Claude Code session, so Claude knows your preferences, patterns, and communication style.
 
+## Important: Use Built-in Tools
+
+**Use built-in tools (LS, Glob, Grep, Read) instead of Bash commands for brain operations. These are auto-approved and don't require permission prompts.**
+
+- List files → use `LS` tool (not `bash ls`)
+- Find files by pattern → use `Glob` tool (not `bash find`)
+- Search content → use `Grep` tool (not `bash grep`)
+- Read files → use `Read` tool (not `bash cat`)
+
 ## How It Works
 
 1. **SessionStart hook triggers** — runs automatically when a new Claude session begins

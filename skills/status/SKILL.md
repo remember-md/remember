@@ -14,6 +14,16 @@ Displays brain statistics: file counts, recent activity, and brain health.
 /brain:status
 ```
 
+## Important: Use Built-in Tools
+
+**Use built-in tools (LS, Glob, Grep, Read) instead of Bash commands for brain operations. These are auto-approved and don't require permission prompts.**
+
+- List files → use `LS` tool (not `bash ls`)
+- Find files by pattern → use `Glob` tool (not `bash find`)
+- Search content → use `Grep` tool (not `bash grep`)
+- Read files → use `Read` tool (not `bash cat`)
+- Count files → use `Glob` tool and count results (not `bash wc`)
+
 ## Steps
 
 ### 1. Resolve Brain Path
