@@ -4,6 +4,7 @@ description: >
   Load your Persona at session start. This hooks into SessionStart to inject behavioral
   patterns and preferences from Persona.md into every conversation.
 version: 1.4.0
+user-invocable: false
 ---
 
 # brain-session — Session Start Hook
