@@ -11,9 +11,11 @@ user-invocable: false
 
 Loads `Persona.md` from your brain at the start of each Claude Code session, so Claude knows your preferences, patterns, and communication style.
 
-## Important: Use Built-in Tools
+## Important: Use Built-in Tools (NO Bash!)
 
 **Use built-in tools (LS, Glob, Grep, Read) instead of Bash commands for brain operations. These are auto-approved and don't require permission prompts.**
+
+**Do NOT use Bash to check env vars.** `$REMEMBER_BRAIN_PATH` is already set — use it directly in Read/Write/LS paths without echoing it first.
 
 - List files → use `LS` tool (not `bash ls`)
 - Find files by pattern → use `Glob` tool (not `bash find`)
