@@ -34,7 +34,11 @@ Use this to prevent duplicates and enable smart linking.
 
 ### Step 1b: Check REMEMBER.md
 
-Read `{brain}/REMEMBER.md` if it exists. Apply Capture Rules and Processing instructions throughout all steps. User instructions override defaults.
+Read REMEMBER.md files (cascading):
+1. `{brain}/REMEMBER.md` (global preferences)
+2. `./REMEMBER.md` in current project (project-specific, if exists)
+
+Apply all rules from both. Project additions layer on top of global. User instructions override defaults.
 
 ### Step 2: Parse User Input
 

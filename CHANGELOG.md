@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-02-16
+
+### Added
+
+- **Cascading REMEMBER.md support** — two levels of customization:
+  - **Global:** `{brain}/REMEMBER.md` — user's universal preferences (existing behavior)
+  - **Project:** `{project_root}/REMEMBER.md` — project-specific additions that layer on top
+- Project sections **append** to global sections (not replace). If both have `## Capture Rules`, content is concatenated.
+- `scripts/user_prompt.sh` now loads and merges both global and project REMEMBER.md files
+- `skills/process/SKILL.md`, `skills/remember/SKILL.md`, `skills/init/SKILL.md` updated with cascading instructions
+- New "Cascading: Global + Project" section in `docs/REMEMBER-md-guide.md` with full explanation and examples
+- FAQ updated: project-specific REMEMBER.md is now supported
+
 ## [1.5.1] - 2026-02-16
 
 ### Changed
@@ -113,6 +126,7 @@ Complete redesign from OpenClaw skill to Claude Code plugin.
 
 Legacy versions as OpenClaw skill. See git history for details.
 
+[1.6.0]: https://github.com/remember-md/remember/releases/tag/v1.6.0
 [1.5.1]: https://github.com/remember-md/remember/releases/tag/v1.5.1
 [1.5.0]: https://github.com/remember-md/remember/releases/tag/v1.5.0
 [1.4.6]: https://github.com/remember-md/remember/releases/tag/v1.4.6

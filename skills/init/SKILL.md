@@ -97,6 +97,8 @@ All sections are optional.
 
 **Skip if file exists** — user may have already customized it.
 
+**Note:** This creates the global REMEMBER.md. Users can also create a project-level `REMEMBER.md` in any project root for project-specific rules that layer on top of global preferences.
+
 ### 5. Create Tasks File
 
 Create `{brain_path}/Tasks/tasks.md` — see `reference.md` for template.

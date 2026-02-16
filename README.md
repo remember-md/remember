@@ -176,7 +176,12 @@ To change your brain location, edit `REMEMBER_BRAIN_PATH` in the appropriate `se
 
 ## Customize Your Brain
 
-Edit `REMEMBER.md` in your brain root to customize how Remember works:
+Remember supports **cascading REMEMBER.md** files — global preferences + project-specific additions:
+
+- **Global:** `~/remember/REMEMBER.md` — your universal preferences (applies everywhere)
+- **Project:** `./REMEMBER.md` — project-specific rules that layer on top
+
+Both files support the same sections:
 
 - **Capture Rules** — what to save, what to skip
 - **Processing** — routing, formatting, tagging preferences
@@ -184,6 +189,8 @@ Edit `REMEMBER.md` in your brain root to customize how Remember works:
 - **Connections** — auto-linking rules, people context
 - **Language** — multilingual capture/processing preferences
 - **Templates** — override default note templates
+
+Project sections **append** to global sections (not replace). Your global rules always apply; project files add specificity.
 
 `REMEMBER.md` is your file — Remember never auto-modifies it. It augments the built-in defaults; anything not specified uses standard behavior.
 

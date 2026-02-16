@@ -207,6 +207,74 @@ Free-form space for anything else you want the brain to know.
 
 ---
 
+## Cascading: Global + Project
+
+Remember supports **two levels** of REMEMBER.md that layer together:
+
+### Global REMEMBER.md
+
+Lives at your brain root (e.g., `~/remember/REMEMBER.md`). Contains your universal preferences that apply everywhere — capture rules, language settings, processing defaults, etc.
+
+### Project REMEMBER.md
+
+Lives at any project root (e.g., `./REMEMBER.md` in your current working directory). Contains project-specific additions that layer on top of global preferences.
+
+### How Merging Works
+
+**Project sections APPEND to global sections — they don't replace them.**
+
+If both files have a `## Capture Rules` section, the content is concatenated. Your global rules still apply, and the project adds specificity on top.
+
+**Example:**
+
+**Global `~/remember/REMEMBER.md`:**
+```markdown
+## Capture Rules
+
+### Always Capture
+- Decisions with rationale
+- Task assignments
+
+### Never Capture
+- Debugging sessions
+- Casual greetings
+
+## Language
+- Default: English for headers and tags
+- Romanian OK for content
+```
+
+**Project `./REMEMBER.md`:**
+```markdown
+## Capture Rules
+
+### Always Capture
+- API contract changes (this project has strict API versioning)
+- Performance benchmarks
+
+### Never Capture
+- CI/CD pipeline noise
+
+## Custom Types
+
+### API Change Log (→ Notes/api-changes/)
+Track breaking changes with: endpoint, version, migration notes
+```
+
+**Merged result (what Claude sees):**
+- **Capture Rules** = global rules + project rules (all apply)
+- **Language** = global only (project didn't override)
+- **Custom Types** = project only (global had none)
+
+### When to Use Project REMEMBER.md
+
+- Project has unique routing needs (e.g., custom entity types)
+- Different capture thresholds than your global defaults
+- Project-specific "always capture" or "never capture" rules
+- Team conventions that differ from your personal preferences
+
+---
+
 ## Getting Started
 
 After running `/remember:init`, you'll find a starter `REMEMBER.md` with empty sections:
@@ -259,4 +327,4 @@ A: Never. REMEMBER.md is exclusively user-edited. Only Persona.md is auto-update
 A: A moderate file (~50 lines) uses ~500 tokens. For brain dumps, only Capture Rules, Processing, Custom Types, and Language sections are injected (not the full file). For `/remember:process`, the full file is loaded (batch operation with larger token budget).
 
 **Q: Can I have project-specific REMEMBER.md files?**
-A: Not yet — this is planned for a future release. Currently, one REMEMBER.md at your brain root applies globally.
+A: Yes! Place a `REMEMBER.md` in your project root. Its sections append to your global `REMEMBER.md` at the brain root. See [Cascading: Global + Project](#cascading-global--project) above.

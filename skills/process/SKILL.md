@@ -34,7 +34,13 @@ Reads unprocessed Claude Code transcripts and routes valuable content into your 
 
 ## Step 1b: Load User Instructions
 
-Read `{brain}/REMEMBER.md` if it exists. This contains explicit preferences for:
+Read REMEMBER.md files (cascading):
+1. **Global:** `{brain}/REMEMBER.md` — user's universal preferences
+2. **Project:** `{project_root}/REMEMBER.md` — project-specific additions (if exists)
+
+Merge: project sections append to global sections. Both apply.
+
+These contain explicit preferences for:
 - **Capture Rules** — what to always/never capture
 - **Processing** — routing overrides, output style, tagging rules
 - **Custom Types** — entity types beyond standard PARA

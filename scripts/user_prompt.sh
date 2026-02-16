@@ -74,29 +74,52 @@ try:
 except OSError:
     instructions = '(template missing)'
 
-# Load REMEMBER.md capture/processing sections (NEW)
-remember_file = os.path.join(brain_path, 'REMEMBER.md')
+# Load REMEMBER.md — cascading: global (brain) + project (cwd)
+import re
 remember_context = ''
-if os.path.isfile(remember_file):
-    import re
-    with open(remember_file, encoding='utf-8') as rf:
-        remember_text = rf.read()
+sections_to_extract = ['Capture Rules', 'Processing', 'Custom Types', 'Language']
 
-    sections_to_extract = ['Capture Rules', 'Processing', 'Custom Types', 'Language']
-    extracted = []
-    for section_name in sections_to_extract:
-        pattern = rf'^## {re.escape(section_name)}\s*\n(.*?)(?=^## |\Z)'
-        match = re.search(pattern, remember_text, re.MULTILINE | re.DOTALL)
+def extract_sections(filepath, sections):
+    # Extract non-empty sections from a REMEMBER.md file
+    if not os.path.isfile(filepath):
+        return {}
+    with open(filepath, encoding='utf-8') as f:
+        text = f.read()
+    result = {}
+    for name in sections:
+        pattern = rf'^## {re.escape(name)}\s*\n(.*?)(?=^## |\Z)'
+        match = re.search(pattern, text, re.MULTILINE | re.DOTALL)
         if match:
             content = match.group(1).strip()
-            if content:  # Skip empty sections
-                extracted.append(f'## {section_name}\n{content}')
+            if content:
+                result[name] = content
+    return result
 
-    if extracted:
-        remember_context = (
-            '\n\nUSER OVERRIDES (these take precedence over defaults above):\n'
-            + '\n\n'.join(extracted)
-        )
+# Global REMEMBER.md (brain root)
+global_remember = os.path.join(brain_path, 'REMEMBER.md')
+global_sections = extract_sections(global_remember, sections_to_extract)
+
+# Project REMEMBER.md (current working directory)
+project_remember = os.path.join(os.getcwd(), 'REMEMBER.md')
+project_sections = extract_sections(project_remember, sections_to_extract)
+
+# Merge: concatenate project onto global for each section
+merged = {}
+for name in sections_to_extract:
+    parts = []
+    if name in global_sections:
+        parts.append(global_sections[name])
+    if name in project_sections:
+        parts.append(project_sections[name])
+    if parts:
+        merged[name] = '\n\n'.join(parts)
+
+if merged:
+    extracted = [f'## {name}\n{content}' for name, content in merged.items()]
+    remember_context = (
+        '\n\nUSER OVERRIDES (these take precedence over defaults above):\n'
+        + '\n\n'.join(extracted)
+    )
 
 context = (
     f'BRAIN DUMP — Full processing instructions. Brain: {brain_path}. Today: {today}.\n\n'
