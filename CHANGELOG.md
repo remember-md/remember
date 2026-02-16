@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-02-16
+
+### Added
+
+- **REMEMBER.md** — User-editable instructions file for customizing brain behavior
+  - `## Capture Rules` — define what to always/never capture, thresholds
+  - `## Processing` — routing overrides, output style, tagging rules
+  - `## Custom Types` — define entity types beyond standard PARA
+  - `## Connections` — auto-linking rules and people context
+  - `## Language` — multilingual capture/processing preferences
+  - `## Templates` — override default note templates
+  - `## Notes` — free-form context and preferences
+- `/brain:init` now creates a starter `REMEMBER.md` with empty sections (Step 4b)
+- Brain dump hook (`user_prompt.sh`) injects relevant REMEMBER.md sections as user overrides after default routing instructions
+- `/brain:process` reads REMEMBER.md for routing, template, and capture customization (Step 1b)
+- Brain dump skill reads REMEMBER.md for capture and processing overrides (Step 1b)
+- Starter template at `assets/templates/remember.md`
+- Full documentation guide at `docs/REMEMBER-md-guide.md`
+
+### Design Principles
+
+- **Pure Markdown** — no YAML/JSON schema, just headers and prose
+- **All sections optional** — empty sections use defaults, zero config works exactly as before
+- **Additive** — augments built-in behavior, explicit language needed to override
+- **Never auto-modified** — user's file, never touched by `/brain:process` (unlike Persona.md)
+- **Precedence:** REMEMBER.md > Built-in Defaults > Persona.md
+
 ## [1.4.6] - 2026-02-16
 
 ### Added

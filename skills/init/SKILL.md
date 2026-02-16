@@ -144,6 +144,35 @@ _Patterns observed across sessions. Newest first._
 
 ```
 
+### 4b. Create REMEMBER.md (if it doesn't exist)
+
+Create `{brain_path}/REMEMBER.md` with starter content:
+
+```markdown
+# REMEMBER.md
+
+Instructions for how your Second Brain captures and processes knowledge.
+All sections are optional.
+
+---
+
+## Capture Rules
+
+## Processing
+
+## Custom Types
+
+## Connections
+
+## Language
+
+## Templates
+
+## Notes
+```
+
+**Skip if file exists** — user may have already customized it.
+
 ### 5. Create Tasks File
 
 Create `{brain_path}/Tasks/tasks.md`:

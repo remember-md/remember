@@ -6,16 +6,11 @@ description: >
   Process past sessions with /brain:process. Stores everything as .md files in a Git repo for Obsidian.
 ---
 
-# Remember
+# Remember — Brain Dump Skill
 
-Your personal knowledge repository. Two ways to populate it:
+Immediate capture: when the user says "remember this", "save this", "brain dump", etc., route content to the right place in the Second Brain.
 
-1. **Brain Dump** (immediate) — Say "remember this: ..." and content routes to the right place
-2. **Process Sessions** (on-demand) — Run `/brain:process` to extract value from past Claude sessions
-
-## ⚠️ MANDATORY: Use Built-in Tools Only (NO Bash!)
-
-**NEVER use Bash commands for brain operations.** Use Claude Code's built-in tools which are auto-approved and require zero permission prompts:
+## ⚠️ MANDATORY: Built-in Tools Only (NO Bash for file ops!)
 
 | Operation | ✅ Use This | ❌ NOT This |
 |-----------|------------|-------------|
@@ -23,194 +18,244 @@ Your personal knowledge repository. Two ways to populate it:
 | Find files | `Glob` tool | `bash find` |
 | Search content | `Grep` tool | `bash grep` |
 | Read files | `Read` tool | `bash cat` |
-| Write/create files | `Write` tool | `bash echo >` / `bash tee` |
-| Count files | `Glob` tool + count results | `bash wc` |
-| Check env vars | Already available as `$REMEMBER_BRAIN_PATH` | `bash echo $VAR` |
+| Create files | `Write` tool | `bash echo >` |
+| Update files | `Edit` tool (old_string → new_string) | `bash sed` / rewrite |
 
-**For complex operations** (stats, counting, multi-step), use a **subagent** (Task tool) that uses the same built-in tools.
+**Only use bash for:** running `build_index.py`.
 
-**Why:** `additionalDirectories` auto-approves LS/Glob/Grep/Read/Write. Bash always prompts.
+---
 
+## Brain Dump Pipeline
 
-## Brain Location
+### Step 1: Get Knowledge Index
 
-Read `$REMEMBER_BRAIN_PATH` env var, fallback `~/remember`.
-
-## First Run Check
-
-**Before any action**, check if brain is initialized:
-
-1. Get brain path from `$REMEMBER_BRAIN_PATH` (fallback `~/remember`)
-2. Check if path exists with expected structure (Inbox/, Projects/, Areas/)
-3. If NOT found → Tell user to run `/brain:init`
-4. If found → Proceed
-
-## Repository Structure
-
-```
-remember/
-├── Inbox/          # Quick capture (clear daily)
-├── Projects/       # Active work with deadlines
-│   └── <name>/
-│       ├── <name>.md           # Project overview
-│       ├── Meetings/           # Meeting notes
-│       └── *.md                # Technical docs, specs
-├── Areas/          # Ongoing responsibilities (flat files)
-│   ├── career.md
-│   ├── health.md
-│   ├── family.md
-│   └── finances.md
-├── Notes/          # Permanent knowledge, learnings, decisions
-├── Resources/      # External links, articles, references
-│   ├── articles/
-│   ├── tools/
-│   └── books/
-├── Journal/        # Daily notes (YYYY-MM-DD.md)
-├── People/         # One note per person
-├── Tasks/          # Centralized task tracking (tasks.md)
-├── Templates/      # Note templates
-└── Archive/        # Completed projects
+Run:
+```bash
+python3 ${CLAUDE_PLUGIN_ROOT}/scripts/build_index.py --compact
 ```
 
-## How It Works
+This tells you what already exists (People, Projects, Areas, Notes, Tasks counts). **Use this to prevent duplicates and enable smart linking.**
 
-### Brain Dump (Immediate Capture)
+### Step 1b: Check REMEMBER.md
 
-When user says "remember this", "save this", "brain dump", etc., the `UserPromptSubmit` hook
-injects routing context. Claude (current session) then writes directly to the correct location.
+Read `{brain}/REMEMBER.md` if it exists. Apply Capture Rules and Processing
+instructions throughout all steps. User instructions override defaults.
 
-The hook runs `scripts/user_prompt.sh` which:
-- Detects brain dump keywords
-- Lists current brain structure (existing People, Projects, Areas)
-- Injects routing rules as additional context
+### Step 2: Parse User Input
 
-### Process Sessions (On-Demand)
+Extract structured data from the conversational input:
 
-`/brain:process` reads unprocessed Claude Code transcripts from `~/.claude/projects/`.
-Uses `scripts/extract.py` to parse JSONL transcripts into clean markdown, then routes content.
+| Look for | Example | Extract |
+|----------|---------|---------|
+| Person name | "met with John about..." | Person: John → check if `People/john.md` exists |
+| Project reference | "for the website project..." | Project → resolve to existing `Projects/website/` |
+| Task/action item | "need to deploy by Friday" | Task + deadline → urgency classification |
+| Decision | "decided to go with Next.js" | Decision + rationale |
+| Learning/insight | "learned that async..." | Topic + content |
+| Area update | "started running again" | Area: health |
+| URL | "check out https://..." | Resource + metadata |
 
-## Routing Rules
+### Step 3: Build Resolution Map
 
-### Content Type → Destination
+For every name/reference, resolve against the knowledge index:
 
-| Content | Decision Logic | Destination |
-|---------|----------------|-------------|
-| Time-bound work with deadline | Is it a project? | `Projects/{name}/{name}.md` |
-| Ongoing responsibility | No deadline, recurring | `Areas/{area}.md` |
-| One-off learning | Single insight | `Notes/{topic}.md` |
-| Person interaction | Meaningful contact | `People/{name}.md` |
-| Task with deadline this week | Urgent | `Tasks/tasks.md` (Focus) |
-| Task without deadline | Important | `Tasks/tasks.md` (Next Up) |
-| Future/roadmap task | Backlog | `Projects/{name}/{name}.md` (Tasks) |
-| Meeting | Structured notes | `Projects/{name}/Meetings/{date}-{type}.md` |
-| Technical doc | Project-specific | `Projects/{name}/{descriptive}.md` |
-| Decision | Strategic choice | `Notes/decision-{topic}.md` |
-| External URL | Resource | `Resources/{type}/{title}.md` |
-| Daily summary | Journal | `Journal/YYYY-MM-DD.md` |
+- **Matches existing entity** → will use `Edit` tool to update
+- **New entity** → will use `Write` tool to create
+- **Ambiguous** → ask user for clarification
 
-### Areas Intelligence
+**Fuzzy matching:** "John", "john smith", "John S." → `People/john-smith.md` if exists in index.
 
-**Decision Tree:**
+### Step 4: Route & Write
 
-1. **Is it time-bound with a deadline?** → YES = Project
-2. **Is it ongoing responsibility?** → YES = Area
-3. **Otherwise** → Note (one-off insight)
+#### For EXISTING files → Use `Edit` tool
 
-**Examples:**
-- "Started running every morning" → `Areas/health.md` (ongoing habit)
-- "Q1 marketing campaign" → `Projects/q1-marketing/` (time-bound)
-- "Learned async patterns" → `Notes/async-patterns.md` (one-off learning)
+**People — add interaction:**
+```
+Read People/{name}.md first.
+Edit tool:
+  old_string: (last entry in ## Interactions)
+  new_string: (last entry + new interaction)
+Update last_contact in frontmatter.
+```
 
-**Default Areas:** `career.md`, `health.md`, `family.md`, `finances.md`
+**Projects — add log/task:**
+```
+Read Projects/{name}/{name}.md.
+Edit tool to append to ## Log or ## Tasks section.
+```
 
-### Task Routing Intelligence
+**Tasks — add to section:**
+```
+Read Tasks/tasks.md.
+Edit tool to insert after ## Focus or ## Next Up header.
+```
 
-**Auto-classification based on urgency:**
+**Areas — append content:**
+```
+Read Areas/{area}.md.
+Edit tool to append to relevant section.
+```
 
-| Urgency | Keywords | Destination |
-|---------|----------|-------------|
-| **URGENT** | "by Friday", "asap", "urgent", "today", deadline this week | `Tasks/tasks.md` (Focus, max 10) |
-| **IMPORTANT** | "should", "need to", "reminder", no deadline | `Tasks/tasks.md` (Next Up, max 15) |
-| **BACKLOG** | "eventually", "Phase X", "v2", "future" | `Projects/{name}/{name}.md` (Tasks/Backlog) |
+**Journal — add section:**
+```
+Read or create Journal/{TODAY}.md.
+Edit/Write to add project section.
+```
 
-**Examples:**
-- "Deploy site by Friday" → Focus (deadline keyword)
-- "Research payment options" → Next Up (no deadline)
-- "Phase 2 dashboard features" → Project backlog (future scope)
+#### For NEW files → Use `Write` tool
 
-### Resource Capture Intelligence
-
-**When user shares a URL:**
-
-1. **Fetch metadata** — use `web_fetch(url)` to extract title, author, summary
-2. **Classify type** — article, tool, video, book, documentation
-3. **Create rich note** in `Resources/{type}/{title}.md`:
-   - Auto-extracted summary
-   - Key takeaways
-   - Why it matters (from context)
-   - Related links to Projects/Notes
-4. **Auto-link** — connect to relevant content in brain
-
-### Persona Learning
-
-**Behavioral pattern extraction** during `/brain:process`:
-
-- User corrections → preferences
-- Repeated workflows → habits
-- Communication style → tone/language
-- Decision criteria → priorities
-- Code style → technical preferences
-
-Updates `Persona.md` with evidence-based learning.
-
-## Note Format
-
-Every note uses minimal frontmatter:
-
+**New Person:**
 ```markdown
 ---
-created: YYYY-MM-DD
-updated: YYYY-MM-DD
-tags: [tag1, tag2]
+created: {TODAY}
+updated: {TODAY}
+tags: [person]
+role: {if known}
+last_contact: {TODAY}
+related: []
 ---
 
-# Title
+# {Name}
 
-Content here. Link to [[Related Notes]] freely.
+{Context from user input}
+
+## Who
+- **Role:** {role}
+- **Context:** {how they relate}
+
+## Notes to Remember
+- {key info}
+
+## Interactions
+
+### {TODAY}
+- {what user said}
 ```
 
-## Persona
+**New Note/Decision:**
+```markdown
+---
+created: {TODAY}
+updated: {TODAY}
+tags: [{topic-tags}]
+related: [{wikilinks}]
+---
 
-`Persona.md` at the brain root contains behavioral patterns and preferences. It's:
-- **Loaded** at every session start (via brain-session)
-- **Updated** during `/brain:process` when new patterns are observed
+# {Title}
 
-This is how Claude gets smarter about working with you over time.
+{Content}
+```
 
-## Commands
+**New Project:**
+```markdown
+---
+created: {TODAY}
+status: active
+tags: [project]
+related: []
+---
 
-| Command | Action |
-|---------|--------|
-| `/brain:init` | Initialize brain structure |
-| `/brain:process` | Process unprocessed Claude sessions + update Persona |
-| `/brain:status` | Show brain statistics |
-| "remember this: X" | Immediate brain dump |
-| "save this: X" | Immediate brain dump |
+# {Project Name}
+
+## Overview
+{from user input}
+
+## Tasks
+### Active
+- [ ] {any tasks mentioned}
+
+## Log
+### {TODAY}
+- Project created
+```
+
+### Step 5: Link Entities
+
+Use `[[wikilinks]]` in all content:
+- `[[People/name]]` or `[[People/name|Display Name]]`
+- `[[Projects/name/name|Project Name]]`
+- `[[Notes/topic]]`
+
+**Link forward only** — Obsidian handles backlinks automatically.
+
+In frontmatter: `related: ["[[Notes/topic]]", "[[Projects/name/name]]"]`
+
+### Step 6: Confirm
+
+Report briefly (one line per file):
+```
+✅ Brain updated:
+  - Updated People/john-smith.md (+interaction)
+  - Created Notes/decision-nextjs.md
+  - Updated Tasks/tasks.md (+1 Focus)
+  - Updated Journal/2026-02-15.md (+1 section)
+```
+
+---
+
+## Task Routing
+
+| Urgency | Signals | Destination |
+|---------|---------|-------------|
+| **URGENT** | Deadline soon, "asap", "urgent", "de mâine" | `Tasks/tasks.md` → ## Focus (max 10) |
+| **IMPORTANT** | "Need to", "trebuie să", no deadline | `Tasks/tasks.md` → ## Next Up (max 15) |
+| **BACKLOG** | "Eventually", "Phase 2", "când am timp" | `Projects/{name}/{name}.md` → Backlog |
+
+Format: `- [ ] Task [[Projects/name/name|Name]] [⚡ if urgent] ({DATE})`
+
+---
+
+## Content Type → Destination
+
+| Content | Destination |
+|---------|-------------|
+| Person interaction | `People/{name}.md` |
+| Task with deadline | `Tasks/tasks.md` (Focus) |
+| Task without deadline | `Tasks/tasks.md` (Next Up) |
+| Future/roadmap task | `Projects/{name}/{name}.md` |
+| Project update | `Projects/{name}/{name}.md` |
+| Decision | `Notes/decision-{topic}.md` |
+| Learning/insight | `Notes/{topic}.md` |
+| Area update | `Areas/{area}.md` |
+| URL/resource | `Resources/{type}/{title}.md` |
+| Unclear | `Inbox/{topic}.md` |
+
+---
+
+## Areas Intelligence
+
+- Time-bound + deadline → Project
+- Ongoing responsibility → Area (flat .md file)
+- One-off insight → Note
+
+Default areas: `career.md`, `health.md`, `family.md`, `finances.md`
+
+---
+
+## Resource Capture (URLs)
+
+1. `web_fetch(url)` → title, summary
+2. Create `Resources/{type}/{title}.md` with frontmatter + summary
+3. Link to related entities
+4. If fetch fails → minimal note with URL
+
+---
 
 ## File Naming
 
 - Folders: `kebab-case/`
 - Files: `kebab-case.md`
-- Dates: `YYYY-MM-DD.md`
 - People: `firstname.md` or `firstname-lastname.md`
+- Dates: `YYYY-MM-DD.md`
 
-## Linking
+---
 
-Use `[[wiki-links]]` to connect notes:
+## Commands Reference
 
-```markdown
-Met with [[People/john-smith]] about [[Projects/myproject/myproject|MyProject]].
-Relevant insight: [[Notes/async-patterns]]
-```
-
-Obsidian handles backlinks automatically — link forward, don't duplicate.
+| Command | Action |
+|---------|--------|
+| `/brain:init` | Initialize brain structure |
+| `/brain:process` | Process past sessions |
+| `/brain:status` | Show brain stats |
+| "remember this: X" | Immediate brain dump (this skill) |
+| "save this: X" | Immediate brain dump (this skill) |

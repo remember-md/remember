@@ -103,6 +103,8 @@ Remember organizes your knowledge base using PARA + Zettelkasten:
 
 ```
 ~/remember/
+├── REMEMBER.md     # Your custom brain instructions (you edit this)
+├── Persona.md      # Your behavioral patterns (auto-updated)
 ├── Inbox/          # Quick capture
 ├── Projects/       # Active work
 ├── Areas/          # Ongoing responsibilities
@@ -112,8 +114,7 @@ Remember organizes your knowledge base using PARA + Zettelkasten:
 ├── People/         # One note per person
 ├── Tasks/          # Centralized task tracking
 ├── Templates/      # Note templates
-├── Archive/        # Completed projects
-└── Persona.md      # Your behavioral patterns (loaded every session)
+└── Archive/        # Completed projects
 ```
 
 ---
@@ -170,6 +171,23 @@ Remember organizes your knowledge base using PARA + Zettelkasten:
 - **Project scope**: `.claude/settings.json` — project-specific brain path
 
 To change your brain location, edit `REMEMBER_BRAIN_PATH` in the appropriate `settings.json`, or re-run `/brain:init`.
+
+---
+
+## Customize Your Brain
+
+Edit `REMEMBER.md` in your brain root to customize how Remember works:
+
+- **Capture Rules** — what to save, what to skip
+- **Processing** — routing, formatting, tagging preferences
+- **Custom Types** — define new entity types beyond PARA
+- **Connections** — auto-linking rules, people context
+- **Language** — multilingual capture/processing preferences
+- **Templates** — override default note templates
+
+`REMEMBER.md` is your file — Remember never auto-modifies it. It augments the built-in defaults; anything not specified uses standard behavior.
+
+For full documentation, see [REMEMBER.md Guide](docs/REMEMBER-md-guide.md).
 
 ---
 

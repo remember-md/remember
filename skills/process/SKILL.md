@@ -4,20 +4,11 @@ description: Process unprocessed Claude sessions into your Second Brain
 user-invocable: true
 ---
 
-# /brain:process - Process Sessions into Second Brain
+# /brain:process — Process Sessions into Second Brain
 
-Reads unprocessed Claude Code transcripts and routes valuable content into your Second Brain.
+Reads unprocessed Claude Code transcripts and routes valuable content into your Second Brain using a knowledge-aware pipeline.
 
-## Usage
-
-```
-/brain:process
-/brain:process --project myproject
-```
-
-## ⚠️ MANDATORY: Use Built-in Tools Only (NO Bash!)
-
-**NEVER use Bash commands for brain operations.** Use Claude Code's built-in tools which are auto-approved and require zero permission prompts:
+## ⚠️ MANDATORY: Built-in Tools Only (NO Bash for file ops!)
 
 | Operation | ✅ Use This | ❌ NOT This |
 |-----------|------------|-------------|
@@ -25,650 +16,388 @@ Reads unprocessed Claude Code transcripts and routes valuable content into your 
 | Find files | `Glob` tool | `bash find` |
 | Search content | `Grep` tool | `bash grep` |
 | Read files | `Read` tool | `bash cat` |
-| Write/create files | `Write` tool | `bash echo >` / `bash tee` |
-| Count files | `Glob` tool + count results | `bash wc` |
-| Check env vars | Already available as `$REMEMBER_BRAIN_PATH` | `bash echo $VAR` |
+| Create files | `Write` tool | `bash echo >` |
+| Update files | `Edit` tool (old_string → new_string) | `bash sed` / rewrite |
+| Count files | `Glob` tool + count | `bash wc` |
 
-**For complex operations** (stats, counting, multi-step), use a **subagent** (Task tool) that uses the same built-in tools.
+**Only use bash for:** running Python scripts (`extract.py`, `build_index.py`).
 
-**Why:** `additionalDirectories` auto-approves LS/Glob/Grep/Read/Write. Bash always prompts.
+---
 
+## Step 1: Resolve Brain Path & Build Knowledge Index
 
-## Steps
+1. Read `$REMEMBER_BRAIN_PATH` env var (fallback `~/remember`). Call this `{brain}`.
+2. If directory doesn't exist → tell user to run `/brain:init` and stop.
+3. Run the knowledge index:
+   ```bash
+   python3 ${CLAUDE_PLUGIN_ROOT}/scripts/build_index.py
+   ```
+4. **Read the output carefully.** This is your map of everything that exists. Use it throughout all remaining steps to prevent duplicates and enable smart linking.
 
-### 1. Resolve Brain Path
+---
 
-Read `$REMEMBER_BRAIN_PATH` env var, fallback `~/remember`. Use this as `{brain_path}`. If the directory doesn't exist → tell user to run `/brain:init`.
+## Step 1b: Load User Instructions
 
-### 2. Find Unprocessed Sessions
+Read `{brain}/REMEMBER.md` if it exists. This contains explicit preferences for:
+- **Capture Rules** — what to always/never capture
+- **Processing** — routing overrides, output style, tagging rules
+- **Custom Types** — entity types beyond standard PARA
+- **Connections** — auto-linking rules, people context
+- **Templates** — overrides for Journal, People, etc.
 
-Run:
+**These instructions take precedence over default routing in Step 4.**
+
+If REMEMBER.md says "Never capture X" → skip X even if normally captured.
+If it says "Route Y to Z" → route to Z even if defaults say otherwise.
+If it defines a Custom Type → create files matching that specification.
+
+---
+
+## Step 2: Find Unprocessed Sessions
+
 ```bash
 python3 ${CLAUDE_PLUGIN_ROOT}/scripts/extract.py --unprocessed
 ```
 
-If `--project` argument was given:
+With project filter:
 ```bash
 python3 ${CLAUDE_PLUGIN_ROOT}/scripts/extract.py --unprocessed --project <name>
 ```
 
-Show the list to the user and ask which sessions to process.
-Options:
-- **All** — process everything
-- **Pick specific sessions** — user selects by number
-- **Skip** — cancel
+Show the list. Ask user which to process: **All**, **specific sessions by number**, or **Skip**.
 
-### 3. Extract Each Session
+---
 
-For each selected session, run:
+## Step 3: Extract Each Session
+
+For each selected session:
 ```bash
 python3 ${CLAUDE_PLUGIN_ROOT}/scripts/extract.py <transcript_path>
 ```
 
-This outputs clean markdown with user messages and short assistant responses.
+Note the `**Session date (use for journal/tasks):**` line — use THAT date for everything (journal filenames, frontmatter, last_contact, task dates). Never use today's date.
 
-### 4. Read Current Brain Structure
-
-List what exists to avoid duplicates:
-```bash
-ls {brain_path}/People/
-ls {brain_path}/Projects/
-ls {brain_path}/Notes/
-ls {brain_path}/Journal/
-ls {brain_path}/Tasks/tasks.md
-ls {brain_path}/Areas/
-```
-
-### 5. Route Content Intelligently
-
-**CRITICAL: Use session dates, NOT today's date.**
-Each extracted session includes a `**Session date (use for journal/tasks):**` line. Use THAT date for all routing — journal file names, task dates, frontmatter `created`/`updated` fields, and people `last_contact`. You are often processing sessions from past days, so the current date is irrelevant.
-
-Read the extracted content and route to the appropriate location:
-
-| Content Type | Destination | Action |
-|---|---|---|
-| People mentioned (not casually) | `{brain_path}/People/{name}.md` | Create or append interaction (use session date) |
-| Tasks / TODOs | See Task Routing Intelligence below | Route based on urgency |
-| Project work (general) | `{brain_path}/Projects/{name}/{name}.md` | Update with activity (use session date) |
-| Meeting notes | `{brain_path}/Projects/{name}/Meetings/{date}-{type}.md` | Create structured meeting note |
-| Technical docs | `{brain_path}/Projects/{name}/{descriptive}.md` | Create project-specific sub-note |
-| Architecture decisions | `{brain_path}/Projects/{name}/{topic}.md` | Document in project folder |
-| Technical learnings | `{brain_path}/Notes/{topic}.md` | Create or update (use session date) |
-| Daily summary | `{brain_path}/Journal/{SESSION_DATE}.md` | Create or update (file named by session date) |
-| Decisions | `{brain_path}/Notes/decision-{topic}.md` | Create with context (use session date) |
-| Area-related (ongoing) | See Areas Intelligence below | Route to appropriate area |
-| External links/resources | See Resource Capture Intelligence below | Fetch metadata, create rich note |
-
-#### Date Rules
-
-- **Journal**: File goes to `Journal/{SESSION_DATE}.md`, NOT `Journal/{TODAY}.md`. A session from Jan 15 goes into `Journal/2026-01-15.md`, even if you process it on Feb 9.
-- **Tasks**: Include the session date when appending: `- [ ] Task description [[Projects/project|Context]] (2026-01-15)`
-- **People**: Set `last_contact` to the session date, not today
-- **Frontmatter**: `created` = session date (for new files), `updated` = session date (for existing files)
-- **Multi-day sessions**: If a session spans multiple days (date headers in extract), route content to the day it occurred. Journal entries may need to go to multiple date files.
-
-#### Areas Intelligence (Decision Tree)
-
-**Question 1: Is it time-bound with a deadline?**
-- YES → It's a **Project**, not an Area
-- NO → Continue to Question 2
-
-**Question 2: Is it ongoing responsibility without an end date?**
-- YES → It's an **Area**
-- NO → It's a **Note** (one-off learning/insight)
-
-**Examples:**
-
-| Content | Decision | Destination |
-|---------|----------|-------------|
-| "Started running every morning" | Ongoing habit, no deadline | `Areas/health.md` |
-| "Q1 marketing campaign planning" | Time-bound, has deadline | `Projects/q1-marketing/` |
-| "Learned async/await patterns" | One-off learning | `Notes/async-await-patterns.md` |
-| "Monthly budget review process" | Ongoing responsibility | `Areas/finances.md` |
-| "Building new landing page" | Time-bound project | `Projects/landing-page-redesign/` |
-| "Family dinner traditions" | Ongoing, no deadline | `Areas/family.md` |
-
-**Default Areas (create if they don't exist):**
-- `career.md` — professional development, skills, networking
-- `health.md` — fitness, wellness, habits, routines
-- `family.md` — relationships, quality time, traditions
-- `finances.md` — budget, investments, income tracking
-
-**Custom Areas:** User can create new areas as single files (e.g., `side-projects.md`, `learning.md`)
-
-**Rules:**
-- Areas are FLAT files (one `.md` per area, no subfolders)
-- If an area grows >200 lines → extract sections to `Notes/` and link
-- If an area becomes time-bound → move to `Projects/`
-
-#### Task Routing Intelligence (AI-Driven Classification)
-
-**YOU (the AI) classify tasks by understanding context and urgency semantically, not via keywords.**
-
-**Goal:** Route tasks to the right place based on urgency and importance.
-
-**Classification Categories:**
-
-| Urgency | Description | Destination | Max Count |
-|---------|-------------|-------------|-----------|
-| **URGENT** | Has a near deadline or blocking priority | `Tasks/tasks.md` → ## Focus | 10 |
-| **IMPORTANT** | Needs to be done, but no immediate deadline | `Tasks/tasks.md` → ## Next Up | 15 |
-| **BACKLOG** | Future work, nice-to-have, roadmap item | `Projects/{name}/{name}.md` → ## Tasks → ### Backlog | No limit |
-
-**How to Classify (Semantic Understanding):**
-
-**URGENT — Ask yourself:**
-- Does this have a deadline within the next 7 days?
-- Is someone waiting on this?
-- Will something break if this isn't done soon?
-- Does the user express time pressure? (any language: "urgent", "asap", "de mâine", "azi", "by Friday")
-
-**IMPORTANT — Ask yourself:**
-- Is this a clear action item without a deadline?
-- Should this be done relatively soon?
-- Is it a stepping stone for something bigger?
-- User says "trebuie să" / "need to" / "should" without urgency?
-
-**BACKLOG — Ask yourself:**
-- Is this future work? ("Phase 2", "v2", "eventually", "someday")
-- Is it exploratory? ("research", "maybe", "consider")
-- Is it part of a roadmap but not active work?
-- User says "eventual" / "later" / "când am timp"?
-
-**Multi-Language Urgency Signals:**
-
-**Urgent (any of these):**
-- English: "by [day/date]", "urgent", "asap", "today", "this week", "deadline", "blocking"
-- Other languages: "de mâine", "urgent", "azi", "săptămâna asta", "până [când]", "blochează"
-- Context: Specific near date mentioned (numeric or day name)
-
-**Important (any of these):**
-- English: "should", "need to", "important", "priority", "reminder"
-- Other languages: "trebuie", "ar trebui", "important", "prioritate", "să nu uit"
-- Context: Action verb without deadline
-
-**Backlog (any of these):**
-- English: "eventually", "someday", "maybe", "Phase X", "v2", "future", "later", "nice to have"
-- Other languages: "eventual", "cândva", "poate", "viitor", "mai târziu", "când am timp"
-- Context: Conditional or distant future tense
-
-**Edge Cases:**
-
-1. **Ambiguous urgency** → Default to IMPORTANT (safer than backlog)
-2. **Focus already at 10 items** → Push to Next Up (even if urgent)
-3. **Next Up already at 15 items** → Push to Backlog + note in journal
-4. **No clear project link** → Still add to tasks.md with generic category
-
-**Task Format:**
-
-```markdown
-# In Tasks/tasks.md (Focus/Next Up):
-- [ ] Task description [[Projects/project/project|Project Name]] [⚡ if urgent] (YYYY-MM-DD)
-
-# In Projects/{name}/{name}.md (Backlog):
-## Tasks
-### Backlog
-- [ ] Task description (session date if relevant)
-```
-
-**Classification Examples:**
-
-**Example 1: Urgent**
-```
-User: "Deploy site by Friday, clientul așteaptă"
-Analysis:
-- Deadline: "by Friday" (2-3 days away)
-- Urgency signal: "așteaptă" (someone waiting)
-→ URGENT → tasks.md (Focus)
-→ Format: - [ ] Deploy site by Friday [[Projects/website-project/website-project|Website Project]] ⚡ (2026-02-12)
-```
-
-**Example 2: Important**
-```
-User: "Trebuie să researchez payment providers pentru 99marketing"
-Analysis:
-- Action verb: "trebuie" (need to)
-- No deadline mentioned
-→ IMPORTANT → tasks.md (Next Up)
-→ Format: - [ ] Research payment providers [[Projects/marketing-project/marketing-project|Marketing Project]] (2026-02-12)
-```
-
-**Example 3: Backlog**
-```
-User: "Phase 2: add user dashboard pentru saas-app, eventual"
-Analysis:
-- Future scope: "Phase 2"
-- Low urgency: "eventual"
-→ BACKLOG → Projects/saas-app/saas-app.md
-→ Format: - [ ] User dashboard implementation (under ## Tasks → ### Backlog)
-```
-
-**Linking Rules:**
-
-- If task mentions a project → add `[[Projects/{name}/{name}|Name]]` link
-- If project not mentioned but you know context → infer and link
-- If truly generic → add to tasks.md without project link (user can add later)
-- Always add session date for traceability
-
-**Duplication Prevention:**
-
-- **NEVER duplicate** same task in both tasks.md AND project file
-- **Rule:** If it goes to Focus/Next Up → link to project, but don't duplicate content in project file
-- **Exception:** Roadmap items in project files are NOT tasks (descriptive text, not checkboxes)
-
-**Zero Duplication Example:**
-
-```markdown
-# tasks.md (Focus):
-- [ ] Deploy site by Friday [[Projects/website-project/website-project|Website Project]] ⚡ (2026-02-12)
-
-# Projects/website-project/website-project.md:
-## Tasks
-### Active
-[No entry here - it's in Focus already]
-
-## Roadmap
-### Phase 1
-- site integration (in progress, deploy scheduled Friday)
-  ↑ This is descriptive, NOT a checkbox task
-```
-
-**After Classification:**
-
-1. Write task to appropriate location (tasks.md or project file)
-2. Add session date for context
-3. Link to project if applicable
-4. Mark urgent tasks with ⚡
-5. Report in final summary where task was added
-
-**CRITICAL: Understand urgency semantically across languages. Context > keywords.**
-
-
-
-### Backlog
-- [ ] Task description
-```
-
-**Rules:**
-- If task mentions a project → add link to project file
-- If urgency unclear → default to Next Up
-- If Focus already has 10 items → push to Next Up
-- Never duplicate between tasks.md and project files (choose one)
-
-#### Persona Learning (AI-Driven Evidence Extraction)
-
-**After routing ALL content, analyze sessions for behavioral patterns using semantic understanding.**
-
-**YOU (the AI) analyze the session content. Don't rely on keyword matching - understand context in any language.**
-
-**Pattern Categories to Detect:**
-
-1. **User Corrections**
-   - User changed your approach or rejected a suggestion
-   - User said "no, do it this way" (în orice limbă)
-   - User modified your output
-   - Example detection: User disagreed with how you did something → note what they prefer instead
-
-2. **Stated Preferences**
-   - User explicitly says what they like/don't like
-   - "I prefer X over Y", "Never use Z", "Always do W"
-   - Language-agnostic: "prefer" = "preferă" = "mai bine cu"
-   - Example: User says they prefer concise responses → add evidence
-
-3. **Repeated Workflows**
-   - Same sequence of actions appears multiple times across sessions
-   - User mentions "I always..." or "usually I..."
-   - Pattern: If user does X → Y → Z repeatedly → it's a workflow
-   - Example: User always runs tests before commit → document workflow
-
-4. **Communication Style**
-   - How user writes: concise vs detailed, formal vs casual
-   - Language preferences: English for code, native language for casual
-   - Tone indicators: emojis, punctuation, formality
-   - Example: User uses "hai să" instead of "let's" → native language preference for casual
-
-5. **Decision-Making Patterns**
-   - What criteria user uses to evaluate options
-   - What they prioritize (speed vs quality, cost vs features, etc.)
-   - Consistency in choices across sessions
-   - Example: User always picks simpler solution → document preference
-
-6. **Code/Technical Style**
-   - Naming conventions user prefers
-   - Frameworks/tools they favor
-   - Architecture patterns they use
-   - Example: User consistently uses kebab-case → add to Code Style
-
-**Detection Logic (Semantic, Not Regex):**
-
-Ask yourself these questions when reading the session:
-
-- **Did the user correct me?** → What did they want instead? Why?
-- **Did the user state a preference explicitly?** → What exactly?
-- **Did the user repeat a behavior?** → Check past sessions for pattern
-- **How does the user communicate?** → Formal? Casual? Mixed language?
-- **How does the user make decisions?** → What matters to them?
-- **What technical choices do they make consistently?** → Patterns?
-
-**Multi-Language Support:**
-
-- Other languages: "prefer", "mai bine", "nu-mi place", "întotdeauna"
-- English: "I prefer", "always", "never use", "better with"
-- Mixed: User switches languages → note that preference
-- Understand intent, not just keywords: "de mâine" = urgent, "eventual" = backlog
-
-**Update Rules:**
-
-1. **Read Persona.md first** → see existing patterns
-2. **If session reinforces existing pattern** → Add evidence line:
-   ```markdown
-   - [YYYY-MM-DD] User again preferred X over Y (context: project Z)
-   ```
-3. **If session reveals NEW pattern** → Add to appropriate section + evidence:
-   ```markdown
-   ## Communication
-   - Prefers concise, no-fluff responses
-   
-   ## Evidence Log
-   - [YYYY-MM-DD] User asked to skip intro/outro in responses
-   ```
-4. **If session CONTRADICTS pattern** → Update section, note change:
-   ```markdown
-   ## Evidence Log
-   - [YYYY-MM-DD] Previous preference changed — now wants detailed explanations for complex topics
-   ```
-
-**What to Capture vs Skip:**
-
-**Capture:**
-- Clear, meaningful behavioral patterns
-- Preferences stated explicitly or shown repeatedly
-- Communication style signals (language, tone, formality)
-- Decision criteria that appear consistent
-- Technical choices made 3+ times
-
-**Skip:**
-- One-off actions with no pattern
-- Routine/trivial behavior (opening files, running commands)
-- Contradictory signals (user experimenting, not deciding)
-- Ambiguous situations (unclear intent)
-
-**Evidence Format:**
-
-```markdown
-[YYYY-MM-DD] Brief description of what happened + what it reveals
-
-Good examples:
-- [2026-02-12] User corrected task routing — prefers Focus/Next Up structure over distributed
-- [2026-02-12] User switched to native language mid-conversation for casual topic
-- [2026-02-11] User chose flat Areas structure over nested folders (simplicity priority)
-
-Bad examples:
-- [2026-02-12] User opened a file (too trivial)
-- [2026-02-12] User said something (no insight)
-- [2026-02-12] Pattern detected (what pattern??)
-```
-
-**Persona.md Update Process:**
-
-1. **Read current Persona.md** → load existing knowledge
-2. **Analyze session semantically** → detect patterns (questions above)
-3. **Determine updates needed:**
-   - New evidence for existing pattern → append to Evidence Log
-   - New pattern → add to appropriate section + evidence
-   - Contradiction → update section + note change
-4. **Write updates** → prepend new evidence (newest first)
-5. **Update frontmatter** → `updated: {SESSION_DATE}`
-
-**Example Analysis:**
-
-**Session excerpt:**
-```
-User: "hai să implementezi 5-8. vezi ca in instructiuni sa nu existe referince la nume reale"
-```
-
-**Analysis (semantic understanding):**
-- Language: native language ("hai să" = "let's")
-- Preference: Generic examples over real data (privacy/reusability concern)
-- Communication: Direct, concise instruction
-- Decision criteria: Values clean documentation
-
-**Persona update:**
-```markdown
-## Evidence Log
-- [2026-02-12] User requested removing hardcoded names from docs — values generic, reusable examples
-- [2026-02-12] User gave instructions in native language with direct, concise style
-```
-
-**CRITICAL: Use AI semantic understanding, NOT keyword matching. Understand intent across languages.**
-
-**After analysis:**
-- If meaningful patterns found → update Persona.md
-- If no clear patterns → skip (better to miss than hallucinate)
-- Report what was updated in final summary
-
-
-#### Resource Capture Intelligence (Web URLs)
-
-**When session contains external URLs:**
-
-1. **Detect URL** — any `http://` or `https://` link
-2. **Fetch Metadata** — use `web_fetch(url)` to extract:
-   - Page title
-   - Author (if meta tag exists)
-   - Description/summary
-   - Content preview (first 2-3 paragraphs)
-3. **Classify Type** — article, tool, video, book, documentation
-4. **Determine Subfolder** — `Resources/articles/`, `Resources/tools/`, etc.
-5. **Create Rich Note**:
-
-```markdown
----
-source: {URL}
-author: {AUTHOR}
-type: {TYPE}
-created: {SESSION_DATE}
-tags: [resource, {topic-tags}]
-related: []
 ---
 
-# {PAGE_TITLE}
+## Step 4: Process Each Session
 
-## Summary
-{Auto-extracted 2-3 sentence summary}
+For each extracted session, do sub-steps 4a through 4e **with the knowledge index in context**.
 
-## Key Takeaways
-{Bullet points from content or ask user}
+### 4a. Build Resolution Map
 
-## Why It Matters
-{Infer from session context or ask user}
+For every name, project, topic, or reference in the session, resolve it:
 
-## Related
-{Auto-link to related Projects/Notes}
+| Reference in session | Resolution | Action |
+|---------------------|------------|--------|
+| Matches existing person | `People/{existing-file}.md` | **Edit** (update) |
+| Matches existing project | `Projects/{existing}/` | **Edit** (update) |
+| Matches existing note | `Notes/{existing}.md` | **Edit** (update) |
+| Matches existing area | `Areas/{existing}.md` | **Edit** (update) |
+| New person | `People/{new-name}.md` | **Write** (create) |
+| New project | `Projects/{new}/` | **Write** (create) |
+| New topic/learning | `Notes/{new-topic}.md` | **Write** (create) |
+
+**Fuzzy matching:** "John", "john smith", "John S." all resolve to `People/john-smith.md` if it exists. Check the knowledge index!
+
+### 4b. Classify Content (with User Instructions)
+
+Before classifying, check REMEMBER.md:
+1. **Capture Rules** → apply Always/Never filters FIRST
+2. **Processing → Routing Overrides** → apply before default routing table
+3. **Custom Types** → check if content matches user-defined type
+4. Then fall through to default classification table
+
+Read the session and classify every piece of valuable content:
+
+| Category | What to look for | Destination |
+|----------|-----------------|-------------|
+| **Decisions** | "We decided...", "Going with...", chose X over Y | `Notes/decision-{topic}.md` |
+| **Commitments** | "I'll do X by Friday", promises with owners/deadlines | `Tasks/tasks.md` + link |
+| **Tasks** | "Need to...", "TODO", "trebuie să..." | See Task Routing below |
+| **Learnings** | "TIL", insights, patterns discovered, "am învățat că..." | `Notes/{topic}.md` |
+| **People interactions** | Meetings, calls, discussions with named people | `People/{name}.md` |
+| **Project updates** | Work done, progress, status changes | `Projects/{name}/{name}.md` |
+| **Area updates** | Health habits, career moves, family events, finances | `Areas/{area}.md` |
+| **Resources/URLs** | External links shared | `Resources/{type}/{title}.md` |
+| **Behavioral patterns** | Corrections, preferences, repeated workflows | `Persona.md` |
+
+**Skip:** routine code generation, debugging noise, tool call chatter, system messages.
+
+### 4c. Update EXISTING Files (Edit Tool)
+
+**For files that already exist, use the `Edit` tool for surgical updates. Do NOT rewrite the whole file.**
+
+#### People — Update Interaction Log
+```
+Read People/{name}.md first.
+Use Edit tool:
+  old_string: (last line of ## Interactions or ## Interaction Log section)
+  new_string: (that line + new interaction entry)
+
+Also update last_contact in frontmatter:
+  old_string: "last_contact: 2026-01-15"
+  new_string: "last_contact: {SESSION_DATE}"
 ```
 
-6. **Auto-Link** — Scan for related content:
-   - Mentions project → link `[[Projects/{name}/{name}|Name]]`
-   - Mentions topic → link `[[Notes/{topic}]]`
-   - Update related notes' frontmatter
-
-**Example:**
-
-```markdown
-User: "Save this: https://example.com/article-on-async-patterns"
-
-1. web_fetch(url) → extract metadata
-2. Create Resources/articles/async-patterns-in-python.md:
-
----
-source: https://example.com/article-on-async-patterns
-author: Jane Doe
-type: article
-created: 2026-02-12
-tags: [resource, python, async, patterns]
-related: ["[[Notes/async-await-patterns]]", "[[Projects/myproject/myproject]]"]
----
-
-# Async Patterns in Python
-
-## Summary
-Deep dive into asyncio patterns for handling concurrent operations in Python applications.
-
-## Key Takeaways
-- Use asyncio.gather() for parallel execution
-- Context managers work with async
-- Proper error handling in async contexts
-
-## Why It Matters
-Relevant for current API refactoring work in myproject.
-
-## Related
-- [[Notes/async-await-patterns]]
-- [[Projects/myproject/myproject|MyProject]] — API optimization task
+#### Projects — Update Log
+```
+Read Projects/{name}/{name}.md first.
+Find the ## Log section, add entry:
+  old_string: "## Log\n"  (or last log entry)
+  new_string: "## Log\n\n### {SESSION_DATE}\n- {what was done}\n"
 ```
 
-**Error Handling:**
-- If `web_fetch` fails → create minimal note with URL only, flag for manual review
-- If no metadata available → ask user for context
-
-#### Routing Rules (General)
-
-**People** — Only create/update for meaningful interactions:
-- Meetings, calls, discussions with named individuals
-- NOT for casual mentions or names in code
-- Update `last_contact` in frontmatter to session date, append to `## Interactions`
-
-**Projects** — Match to existing projects when possible:
-- Check `{brain_path}/Projects/` for existing project folders
-- Update recent activity section
-- Link to people involved
-- **Sub-notes:** Create `Projects/{name}/{descriptive}.md` for technical docs, architectural decisions, specs
-- **Meetings:** Create `Projects/{name}/Meetings/{date}-{type}.md` for meeting notes
-
-**Journal** — Group by project, not chronologically:
-```markdown
-## {Project Name}
-- What was done
-- Decisions made
-- People: [[People/name]]
+#### Journal — Append Sections
+```
+If Journal/{SESSION_DATE}.md exists, read it first.
+Use Edit to append new project sections.
+If it doesn't exist, use Write (see 4d).
 ```
 
-**Notes** — For technical insights, patterns, learnings:
-- Use `{brain_path}/Notes/{descriptive-kebab-case}.md`
-- Prefix decisions with `decision-`
+#### Tasks — Add to Correct Section
+```
+Read Tasks/tasks.md first.
+Find ## Focus or ## Next Up section.
+Use Edit to insert new task after section header.
+```
 
-**Tasks** — See Task Routing Intelligence above
+#### Areas — Append Content
+```
+Read Areas/{area}.md. Find relevant section.
+Use Edit to append new content to that section.
+```
 
-#### Linking Rules
+**Always update frontmatter `updated:` field to SESSION_DATE (only if newer than existing).**
 
-**Obsidian handles backlinks automatically.** When you link `[[People/john-smith]]` in a Journal entry, Obsidian shows that Journal entry in john-smith's Backlinks panel. You do NOT need to manually create links in both directions.
+### 4d. Create NEW Files (Write Tool)
 
-**Rule: Link forward from where you write. Obsidian builds the web.**
+When creating new files, check REMEMBER.md `## Templates` section:
+- If user defined a template override → use their template
+- Otherwise → use default from `assets/templates/`
 
-Use `[[wikilinks]]` everywhere:
-- `[[People/name]]` or `[[People/name|Display Name]]`
-- `[[Projects/name/name|Project Name]]`
-- `[[Notes/topic]]`
+For new entities, use the `Write` tool with proper templates:
 
-**When to write content in multiple files (not just links):**
-
-Only update multiple files when you're adding **actual content** (not just a backlink):
-
-| File | What to write (content, not just backlinks) |
-|---|---|
-| `People/name.md` | Meaningful interactions: `## Interactions` entries with context, update `last_contact` |
-| `Projects/name/name.md` | Work log entries: `## Log` with what was done, decisions made |
-| `Journal/{date}.md` | Daily summary grouped by project, with `[[wikilinks]]` to everything mentioned |
-| `Notes/topic.md` | Technical learnings with `related:` in frontmatter |
-| `Tasks/tasks.md` | New tasks with `[[Projects/name/name|Name]]` and date |
-| `Persona.md` | New evidence line if behavioral pattern observed |
-
-**Example — session about a meeting with someone about a project:**
-1. `Journal/{date}.md` → add section with `[[Projects/myproject/myproject|MyProject]]`, `[[People/john-smith]]`, summary of what happened
-2. `People/john-smith.md` → update `last_contact`, add interaction entry (actual content about what was discussed)
-3. `Projects/myproject/myproject.md` → add to `## Log` (actual work/decisions, not just a link)
-4. `Tasks/tasks.md` → add action items with `[[Projects/myproject/myproject|MyProject]]`
-5. `Persona.md` → add evidence if behavioral pattern observed
-
-**Do NOT:** Go back to `People/john-smith.md` to add `[[Journal/2026-02-09]]` — Obsidian shows that automatically in backlinks.
-
-### 6. File Format
-
-All files use YAML frontmatter + wikilinks. **Dates in frontmatter = session date, not today.**
-
+#### New Person
 ```markdown
 ---
 created: {SESSION_DATE}
 updated: {SESSION_DATE}
-tags: [tag1, tag2]
+tags: [person]
+role: {role if known}
+organization: {org if known}
+last_contact: {SESSION_DATE}
+related: []
 ---
 
-# Title
+# {Person Name}
 
-Content with [[wikilinks]].
+{Brief description from session context}
+
+## Who
+- **Role:** {role}
+- **Context:** {how they came up}
+
+## Notes to Remember
+- {key things mentioned}
+
+## Interactions
+
+### {SESSION_DATE}
+- {what happened/was discussed}
 ```
 
-When updating existing files:
-- **Read the file first** to match existing style
-- **Append** new content, don't replace
-- **Update** `updated` in frontmatter to session date (only if session date is newer than existing `updated`)
+#### New Project
+```markdown
+---
+created: {SESSION_DATE}
+status: active
+tags: [project]
+related: []
+---
 
-### 7. Update Persona
+# {Project Name}
 
-**See "Persona Learning (Evidence Extraction)" section above.**
+## Overview
+{from session context}
 
-This runs AFTER all content routing. Scan processed sessions for behavioral patterns and update `Persona.md`.
+## Tasks
+### Active
+- [ ] {tasks from session}
 
-### 8. Mark Sessions as Processed
+## Log
+### {SESSION_DATE}
+- Project created from session context
+- {details}
+```
 
-After successfully routing content from a session:
+#### New Note
+```markdown
+---
+created: {SESSION_DATE}
+updated: {SESSION_DATE}
+tags: [{topic-tags}]
+related: [{wikilinks to related entities}]
+---
+
+# {Topic Title}
+
+{Content — insight, learning, decision rationale}
+
+## Related
+- [[Projects/{related}]] — context
+- [[People/{related}]] — who was involved
+```
+
+#### New Journal Entry
+```markdown
+---
+created: {SESSION_DATE}
+tags: [journal]
+---
+
+# {SESSION_DATE}
+
+## {Project/Topic Name}
+- {What happened}
+- Discussed with [[People/{name}]]
+- Decision: {what was decided}
+- See [[Notes/{related-note}]]
+```
+
+**Use [[wikilinks]] everywhere.** Link forward; Obsidian handles backlinks.
+
+### 4e. Update Persona.md — Behavioral Pattern Detection
+
+**After all content is routed**, analyze the session for patterns. This is semantic analysis — understand intent, don't keyword-match.
+
+**What to detect:**
+
+1. **User corrections** — User changed your approach, rejected a suggestion, said "no, do it this way"
+   → What do they actually prefer?
+
+2. **Stated preferences** — "I prefer X", "Never use Z", "Always do W", "prefer", "mai bine cu"
+   → Record the preference explicitly
+
+3. **Repeated workflows** — Same sequence appears again, "I always...", "usually I..."
+   → Document the workflow
+
+4. **Communication style** — Concise vs detailed, formal vs casual, language switching (EN↔RO)
+   → Note style signals
+
+5. **Decision criteria** — What they prioritize (speed vs quality, simplicity vs features)
+   → Record decision patterns
+
+6. **Code/technical style** — Naming conventions, frameworks, architecture preferences
+   → Add to code style section
+
+**How to update Persona.md:**
+
+1. **Read current Persona.md** first
+2. If pattern **reinforces existing** → add evidence line:
+   ```
+   - [{SESSION_DATE}] User again preferred X over Y (context: Z)
+   ```
+3. If **new pattern** → add to appropriate section + evidence
+4. If **contradicts existing** → update section, note the change
+5. Update frontmatter `updated:` to SESSION_DATE
+
+**Skip if:** no clear patterns found. Better to miss than hallucinate.
+
+---
+
+## Step 5: Mark Processed & Report
+
+### Mark each session:
 ```bash
 python3 ${CLAUDE_PLUGIN_ROOT}/scripts/extract.py --mark-processed <session_id>
 ```
 
-### 9. Report Results
-
-Show summary:
+### Report summary:
 ```
-Brain updated from 3 sessions:
+Brain updated from {N} sessions:
 
 Created:
   - People/john-smith.md (new)
-  - Notes/decision-second-brain-architecture.md (new)
-  - Resources/articles/async-patterns-python.md (new)
+  - Notes/decision-api-architecture.md (new)
 
 Updated:
   - Journal/2026-02-09.md (+2 sections)
-  - Projects/myproject/myproject.md (activity update)
+  - Projects/myproject/myproject.md (log entry)
   - Tasks/tasks.md (+3 tasks: 1 Focus, 2 Next Up)
   - Persona.md (+2 evidence lines)
-  - Areas/health.md (+1 entry)
 
-Processed sessions: 3
-Remaining unprocessed: 12
+Processed: {N} sessions
+Remaining unprocessed: {M}
 ```
 
-## What to Capture vs Skip
+---
 
-**Capture:**
-- Meaningful conversations about work, people, decisions
-- Technical learnings and patterns
-- Action items and tasks
-- Project progress and status
-- Strategic discussions
-- External resources (articles, tools, links)
-- Behavioral patterns (for Persona)
+## Task Routing Intelligence
 
-**Skip:**
-- Routine code generation / debugging (too granular)
-- Plugin installation and setup sessions
-- Sessions that are mostly tool calls with little conversation
-- System/meta messages
+Classify tasks semantically (understand urgency in any language):
+
+| Urgency | Signals | Destination | Limit |
+|---------|---------|-------------|-------|
+| **URGENT** | Deadline this week, someone waiting, "asap", "urgent", "de mâine", "azi" | `Tasks/tasks.md` → ## Focus | 10 |
+| **IMPORTANT** | Clear action, no deadline, "trebuie să", "need to", "should" | `Tasks/tasks.md` → ## Next Up | 15 |
+| **BACKLOG** | Future work, "Phase 2", "eventually", "eventual", "când am timp" | `Projects/{name}/{name}.md` → ## Tasks/Backlog | ∞ |
+
+**Format:** `- [ ] Task description [[Projects/name/name|Name]] [⚡ if urgent] ({SESSION_DATE})`
+
+**Rules:**
+- Never duplicate between tasks.md and project files
+- Ambiguous → default to IMPORTANT
+- Focus full (10) → push to Next Up
+- Next Up full (15) → push to Backlog + journal note
+
+---
+
+## Date Rules (Critical!)
+
+- **Journal filename:** `Journal/{SESSION_DATE}.md` — NOT today
+- **Frontmatter created:** SESSION_DATE (new files)
+- **Frontmatter updated:** SESSION_DATE (if newer than existing)
+- **People last_contact:** SESSION_DATE
+- **Task dates:** SESSION_DATE for traceability
+- **Multi-day sessions:** Route content to the day it occurred
+
+---
+
+## Areas Intelligence
+
+| Question | YES → | NO → |
+|----------|-------|------|
+| Time-bound with deadline? | Project | Continue |
+| Ongoing responsibility? | Area | Note (one-off) |
+
+Default areas: `career.md`, `health.md`, `family.md`, `finances.md`
+Areas are **flat files** — one `.md` per area, no subfolders.
+
+---
+
+## Resource Capture (URLs)
+
+When session contains URLs:
+1. Fetch metadata: `web_fetch(url)` → title, author, summary
+2. Classify: article, tool, video, book, docs
+3. Create `Resources/{type}/{title}.md` with frontmatter + summary + key takeaways
+4. Auto-link to related Projects/Notes
+5. If fetch fails → create minimal note with URL, flag for review
+
+---
+
+## Linking Rules
+
+- Use `[[wikilinks]]` everywhere: `[[People/name]]`, `[[Projects/name/name|Display]]`, `[[Notes/topic]]`
+- **Link forward only** — Obsidian handles backlinks
+- Write actual content in multiple files only when adding real information (not just backlinks)
+- In frontmatter: `related: ["[[Notes/topic]]", "[[Projects/name/name]]"]`
+
+---
 
 ## Error Handling
 
-- If extract.py fails → show error, skip that session, continue with others
-- If a file write fails → warn user, continue with remaining routes
-- If no unprocessed sessions → tell user, suggest using "remember this:" for immediate capture
-- If web_fetch fails → create minimal resource note, flag for manual review
+- extract.py fails → show error, skip session, continue with others
+- File write fails → warn user, continue with remaining
+- No unprocessed sessions → tell user, suggest "remember this:" for immediate capture
+- web_fetch fails → create minimal resource note, flag for review
