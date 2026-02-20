@@ -55,14 +55,24 @@ If it defines a Custom Type → create files matching that specification.
 
 ## Step 2: Find Unprocessed Sessions
 
+Detect environment and use the appropriate source:
+
+**Claude Code:**
 ```bash
-node ${CLAUDE_PLUGIN_ROOT}/scripts/extract.js --unprocessed
+node ${CLAUDE_PLUGIN_ROOT}/scripts/extract.js --source claude-code --unprocessed
 ```
 
-With project filter:
+**OpenClaw:**
 ```bash
-node ${CLAUDE_PLUGIN_ROOT}/scripts/extract.js --unprocessed --project <name>
+node ${CLAUDE_PLUGIN_ROOT}/scripts/extract.js --source openclaw --unprocessed
 ```
+
+With project filter (Claude Code only):
+```bash
+node ${CLAUDE_PLUGIN_ROOT}/scripts/extract.js --source claude-code --unprocessed --project <name>
+```
+
+The `--source` flag defaults to auto-detect (OpenClaw if `OPENCLAW` env is set, otherwise Claude Code).
 
 Show the list. Ask user which to process: **All**, **specific sessions by number**, or **Skip**.
 
@@ -70,8 +80,11 @@ Show the list. Ask user which to process: **All**, **specific sessions by number
 
 For each selected session:
 ```bash
-node ${CLAUDE_PLUGIN_ROOT}/scripts/extract.js <transcript_path>
+node ${CLAUDE_PLUGIN_ROOT}/scripts/extract.js --source <source> <file_path>
 ```
+
+For OpenClaw, `<file_path>` is the memory file path (e.g., `~/.openclaw/workspace/memory/2026-02-20.md`).
+For Claude Code, it's the transcript JSONL path.
 
 Note the `**Session date (use for journal/tasks):**` line — use THAT date for everything (journal filenames, frontmatter, last_contact, task dates). Never use today's date.
 
@@ -128,7 +141,7 @@ Skip if no clear patterns found. Better to miss than hallucinate.
 ## Step 5: Mark Processed & Report
 
 ```bash
-node ${CLAUDE_PLUGIN_ROOT}/scripts/extract.js --mark-processed <session_id>
+node ${CLAUDE_PLUGIN_ROOT}/scripts/extract.js --source <source> --mark-processed <session_id>
 ```
 
 Report summary:

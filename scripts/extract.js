@@ -7,27 +7,135 @@ const os = require('os');
 const { getBrainRoot, loadConfig } = require('./config');
 
 const BRAIN_ROOT = getBrainRoot();
-const PROCESSED_FILE = path.join(BRAIN_ROOT, '.processed_sessions');
+const STATE_DIR = path.join(process.env.XDG_STATE_HOME || path.join(os.homedir(), '.local', 'state'), 'remember');
 const CLAUDE_PROJECTS_DIR = path.join(os.homedir(), '.claude', 'projects');
 const MAX_ASSISTANT_TEXT_LEN = loadConfig().extract?.max_assistant_text_len || 500;
 const MIN_SESSION_SIZE = loadConfig().extract?.min_session_size || 500;
 
+// --- Source definitions ---
+
+const SOURCES = {
+  'claude-code': {
+    processedFile: path.join(STATE_DIR, 'processed-claude-code'),
+  },
+  'openclaw': {
+    processedFile: path.join(STATE_DIR, 'processed-openclaw'),
+  },
+};
+
+function getDefaultSource() {
+  // Auto-detect: if OPENCLAW env or running inside OpenClaw, default to openclaw
+  if (process.env.OPENCLAW || process.env.OPENCLAW_WORKSPACE) return 'openclaw';
+  return 'claude-code';
+}
+
 // --- Session tracking ---
 
-function getProcessedSessions() {
+function getProcessedFile(source) {
+  const src = SOURCES[source];
+  if (!src) throw new Error(`Unknown source: ${source}. Valid: ${Object.keys(SOURCES).join(', ')}`);
+  return src.processedFile;
+}
+
+function getProcessedSessions(source) {
   try {
-    return new Set(fs.readFileSync(PROCESSED_FILE, 'utf-8').trim().split('\n').filter(Boolean));
+    return new Set(fs.readFileSync(getProcessedFile(source), 'utf-8').trim().split('\n').filter(Boolean));
   } catch {
     return new Set();
   }
 }
 
-function markSessionProcessed(sessionId) {
-  fs.mkdirSync(path.dirname(PROCESSED_FILE), { recursive: true });
-  fs.appendFileSync(PROCESSED_FILE, sessionId + '\n', 'utf-8');
+function markSessionProcessed(sessionId, source) {
+  const file = getProcessedFile(source);
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.appendFileSync(file, sessionId + '\n', 'utf-8');
 }
 
-// --- Transcript discovery ---
+// --- OpenClaw memory file discovery ---
+
+function getOpenClawMemoryDir() {
+  // Check common locations for OpenClaw memory files
+  const candidates = [
+    process.env.OPENCLAW_WORKSPACE && path.join(process.env.OPENCLAW_WORKSPACE, 'memory'),
+    path.join(os.homedir(), '.openclaw', 'workspace', 'memory'),
+  ].filter(Boolean);
+  for (const dir of candidates) {
+    if (fs.existsSync(dir)) return dir;
+  }
+  return null;
+}
+
+function findOpenClawMemoryFiles() {
+  const memDir = getOpenClawMemoryDir();
+  if (!memDir) return [];
+  const files = [];
+  for (const file of fs.readdirSync(memDir)) {
+    if (!file.endsWith('.md')) continue;
+    const filePath = path.join(memDir, file);
+    let stat;
+    try { stat = fs.statSync(filePath); } catch { continue; }
+    if (!stat.isFile()) continue;
+    files.push(filePath);
+  }
+  return files.sort();
+}
+
+function getOpenClawSessionId(filePath) {
+  return path.basename(filePath, '.md');
+}
+
+function extractOpenClawSession(filePath) {
+  const sessionId = getOpenClawSessionId(filePath);
+  const content = fs.readFileSync(filePath, 'utf-8');
+
+  // Extract date from filename (YYYY-MM-DD.md or YYYY-MM-DD-topic.md)
+  const dateMatch = sessionId.match(/^(\d{4}-\d{2}-\d{2})/);
+  const dateStr = dateMatch ? dateMatch[1] : '';
+  const firstTs = dateStr ? `${dateStr}T00:00:00Z` : null;
+
+  // Parse the markdown into pseudo-messages (sections become context)
+  const messages = [];
+  const lines = content.split('\n');
+  let currentSection = '';
+  let sectionContent = [];
+
+  for (const line of lines) {
+    const headingMatch = line.match(/^#{1,3}\s+(.+)/);
+    if (headingMatch) {
+      // Flush previous section
+      if (currentSection && sectionContent.length) {
+        const text = sectionContent.join('\n').trim();
+        if (text) {
+          messages.push({ role: 'user', text: `## ${currentSection}\n${text}`, time: '', timestamp: firstTs || '' });
+        }
+      }
+      currentSection = headingMatch[1];
+      sectionContent = [];
+    } else {
+      sectionContent.push(line);
+    }
+  }
+  // Flush last section
+  if (currentSection && sectionContent.length) {
+    const text = sectionContent.join('\n').trim();
+    if (text) {
+      messages.push({ role: 'user', text: `## ${currentSection}\n${text}`, time: '', timestamp: firstTs || '' });
+    }
+  }
+
+  return {
+    session_id: sessionId,
+    project: 'openclaw',
+    cwd: null,
+    first_ts: firstTs,
+    last_ts: firstTs,
+    spans_multiple_days: false,
+    session_date: firstTs,
+    messages,
+  };
+}
+
+// --- Claude Code transcript discovery ---
 
 function findAllTranscripts() {
   const transcripts = [];
@@ -253,29 +361,44 @@ function formatSessionMarkdown(session) {
 
 // --- CLI commands ---
 
-function cmdExtract(filePath) {
+function cmdExtract(filePath, source) {
   if (!fs.existsSync(filePath)) {
     process.stderr.write(`Error: file not found: ${filePath}\n`);
     process.exit(1);
   }
-  const session = extractSession(filePath);
+  const session = source === 'openclaw'
+    ? extractOpenClawSession(filePath)
+    : extractSession(filePath);
   console.log(formatSessionMarkdown(session));
 }
 
-function cmdListUnprocessed(projectFilter) {
-  const processed = getProcessedSessions();
-  const transcripts = findAllTranscripts();
+function cmdListUnprocessed(projectFilter, source) {
+  const processed = getProcessedSessions(source);
 
   const unprocessed = [];
-  for (const t of transcripts) {
-    const sid = getSessionId(t);
-    if (processed.has(sid)) continue;
-    const project = getProjectName(t);
-    if (projectFilter && !project.toLowerCase().includes(projectFilter.toLowerCase())) continue;
-    let size;
-    try { size = fs.statSync(t).size; } catch { continue; }
-    if (size < MIN_SESSION_SIZE) continue;
-    unprocessed.push({ path: t, project, size });
+
+  if (source === 'openclaw') {
+    const memFiles = findOpenClawMemoryFiles();
+    for (const f of memFiles) {
+      const sid = getOpenClawSessionId(f);
+      if (processed.has(sid)) continue;
+      let size;
+      try { size = fs.statSync(f).size; } catch { continue; }
+      if (size < MIN_SESSION_SIZE) continue;
+      unprocessed.push({ path: f, project: 'openclaw', size });
+    }
+  } else {
+    const transcripts = findAllTranscripts();
+    for (const t of transcripts) {
+      const sid = getSessionId(t);
+      if (processed.has(sid)) continue;
+      const project = getProjectName(t);
+      if (projectFilter && !project.toLowerCase().includes(projectFilter.toLowerCase())) continue;
+      let size;
+      try { size = fs.statSync(t).size; } catch { continue; }
+      if (size < MIN_SESSION_SIZE) continue;
+      unprocessed.push({ path: t, project, size });
+    }
   }
 
   unprocessed.sort((a, b) => {
@@ -285,13 +408,13 @@ function cmdListUnprocessed(projectFilter) {
   });
 
   if (!unprocessed.length) {
-    console.log('No unprocessed sessions found.');
+    console.log(`No unprocessed sessions found (source: ${source}).`);
     return;
   }
 
-  console.log(`Found ${unprocessed.length} unprocessed session(s):\n`);
+  console.log(`Found ${unprocessed.length} unprocessed session(s) [source: ${source}]:\n`);
   for (const u of unprocessed) {
-    const sid = getSessionId(u.path);
+    const sid = source === 'openclaw' ? getOpenClawSessionId(u.path) : getSessionId(u.path);
     let mtime;
     try {
       const mt = fs.statSync(u.path).mtime;
@@ -309,35 +432,45 @@ function cmdListUnprocessed(projectFilter) {
   }
 }
 
-function cmdMarkProcessed(sessionId) {
-  markSessionProcessed(sessionId);
-  console.log(`Marked as processed: ${sessionId}`);
+function cmdMarkProcessed(sessionId, source) {
+  markSessionProcessed(sessionId, source);
+  console.log(`Marked as processed: ${sessionId} (source: ${source})`);
 }
 
 // --- Main ---
 
 function main() {
   const args = process.argv.slice(2);
-  if (!args.length) {
+
+  // Parse --source flag (can appear anywhere)
+  const srcIdx = args.indexOf('--source');
+  const source = srcIdx !== -1 && args[srcIdx + 1] ? args[srcIdx + 1] : getDefaultSource();
+  // Remove --source and its value from args
+  const cleanArgs = args.filter((_, i) => i !== srcIdx && i !== srcIdx + 1);
+
+  if (!cleanArgs.length) {
     console.log('Usage:');
-    console.log('  node extract.js <transcript.jsonl>');
-    console.log('  node extract.js --unprocessed [--project <name>]');
-    console.log('  node extract.js --mark-processed <session_id>');
+    console.log('  node extract.js [--source claude-code|openclaw] <file>');
+    console.log('  node extract.js [--source claude-code|openclaw] --unprocessed [--project <name>]');
+    console.log('  node extract.js [--source claude-code|openclaw] --mark-processed <session_id>');
+    console.log('');
+    console.log(`Sources: ${Object.keys(SOURCES).join(', ')} (default: ${getDefaultSource()})`);
+    console.log(`State dir: ${STATE_DIR}`);
     process.exit(1);
   }
 
-  if (args[0] === '--unprocessed') {
-    const projIdx = args.indexOf('--project');
-    const projectFilter = projIdx !== -1 && args[projIdx + 1] ? args[projIdx + 1] : null;
-    cmdListUnprocessed(projectFilter);
-  } else if (args[0] === '--mark-processed') {
-    if (!args[1]) {
+  if (cleanArgs[0] === '--unprocessed') {
+    const projIdx = cleanArgs.indexOf('--project');
+    const projectFilter = projIdx !== -1 && cleanArgs[projIdx + 1] ? cleanArgs[projIdx + 1] : null;
+    cmdListUnprocessed(projectFilter, source);
+  } else if (cleanArgs[0] === '--mark-processed') {
+    if (!cleanArgs[1]) {
       process.stderr.write('Usage: extract.js --mark-processed <session-id>\n');
       process.exit(1);
     }
-    cmdMarkProcessed(args[1]);
+    cmdMarkProcessed(cleanArgs[1], source);
   } else {
-    cmdExtract(args[0]);
+    cmdExtract(cleanArgs[0], source);
   }
 }
 
