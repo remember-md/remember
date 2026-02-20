@@ -24,17 +24,20 @@ Reads unprocessed Claude Code transcripts and routes valuable content into your 
 
 ## 🎯 Core Principles
 
-### 1. **Never Overwrite Newer Data with Old Sessions**
+### 1. **Chronology Check: Respect Newer Data**
 
-When processing sessions older than today:
-- ✅ **Append** new information at the end
-- ✅ **Expand** existing sections with bullets
-- ❌ **Never replace** entire sections
-- ❌ **Never delete** existing content
+**For every file update, verify chronology:**
+- Check file's last modification date (via `git log`)
+- Compare with session date
+- **If file is newer than session** → append-only mode (no replace/delete)
+- **If session is newer or file doesn't exist** → normal update mode
 
-**Why:** Files may have been updated after the session date. Old sessions must respect newer information.
+**Why this matters:**
+- You might process old backlog after newer sessions (e.g., OpenClaw feb 2-10 after Claude Code feb 11-20)
+- Re-processing sessions from different sources (Claude Code + OpenClaw overlap)
+- Prevents data loss when file already contains more recent information
 
-**How:** Check `git log` for last modification date. If file modified AFTER session → append only.
+**Simple rule:** Old session content appends, never overwrites.
 
 ### 2. **Use Knowledge Index to Prevent Duplicates**
 
@@ -99,16 +102,9 @@ node ${CLAUDE_PLUGIN_ROOT}/scripts/extract.js --source openclaw --unprocessed
 node ${CLAUDE_PLUGIN_ROOT}/scripts/extract.js --source claude-code --unprocessed
 ```
 
-**💡 Processing Order Recommendation:**
-
-When processing multiple old sessions, consider **newest-first** order to minimize conflicts:
-- Newer sessions update files first
-- Older sessions then append (anti-conflict rules apply)
-- Reduces risk of overwriting recent data
-
-Example: If you have sessions from Feb 5, 10, 15, 20 → process 20, 15, 10, 5.
-
 Show the list. Ask user which to process: **All**, **specific sessions by number**, or **Skip**.
+
+**Note:** Processing order doesn't matter — each session individually checks if it's older than the file's last modification and applies append-only mode automatically.
 
 ## Step 3: Extract Each Session
 
@@ -148,15 +144,34 @@ Before classifying, check REMEMBER.md:
 
 Use the `Edit` tool for surgical updates. Do NOT rewrite whole files.
 
-**🚨 CRITICAL: Anti-Conflict Rule for Old Sessions**
+**🚨 CRITICAL: Anti-Conflict Rule (Chronology Check)**
 
-When processing sessions older than today, **NEVER overwrite existing content** — only append/expand:
+**For EVERY file update, check chronology:**
 
-1. **Check file's last modification:**
+1. **Get file's last modification date:**
    ```bash
    cd {brain} && git log -1 --format="%ai" -- path/to/file.md
    ```
-   If file was modified AFTER session date → **append only, never replace**.
+
+2. **Compare with session date:**
+   ```
+   IF file_last_modified > session_date:
+       → File was updated AFTER this session
+       → MODE: append-only (never replace existing content)
+   ELSE:
+       → File is older than session OR doesn't exist
+       → MODE: normal update (can replace/restructure)
+   ```
+
+3. **This check applies to:**
+   - Old backlog sessions processed after newer ones
+   - Re-processing sessions (e.g., Claude Code → OpenClaw overlap)
+   - Any situation where file may contain newer information
+
+**Example:**
+- Session date: 2026-02-05
+- File last modified: 2026-02-11 (processed from another source)
+- Result: **Append-only mode** — session adds context without overwriting feb 11 data
 
 2. **Safe operations:**
    - ✅ **Append** new sections at the end
@@ -179,25 +194,36 @@ When processing sessions older than today, **NEVER overwrite existing content** 
    - Update ONLY if session date > current `updated:` value
    - If current `updated:` is NEWER than session → leave unchanged
 
-**Example — Journal append (safe):**
+**Example 1 — Journal append (old session + newer file):**
 ```markdown
-# Existing section
-- Existing bullet
+# 2026-02-05
 
-# New section from old session (appended)
-- New content
+## Existing section (from feb 11 processing)
+- Data processed on feb 11
+
+## New section from feb 5 session (appended safely)
+- Additional context from old OpenClaw session
+- Doesn't touch existing sections above
 ```
 
-**Example — Project log insert (safe):**
+**Example 2 — Project log chronological insert:**
 ```markdown
 ### 2026-02-20
-- Recent work
+- Recent work (processed feb 21)
 
-### 2026-02-15  ← INSERT old session here
-- Old session details
+### 2026-02-05  ← INSERT old session here (chronological position)
+- Details from feb 5 OpenClaw session
+- Safe because it's append-only mode
 
-### 2026-02-10
+### 2026-02-03
 - Older work
+```
+
+**Example 3 — Skip when conflict detected:**
+```
+Session: 2026-02-05
+File last modified: 2026-02-18
+Action: Append brief summary at end, don't replace existing 2026-02-18 content
 ```
 
 **When in doubt:** Append, don't replace. Better to have duplicate context than lose new information.
