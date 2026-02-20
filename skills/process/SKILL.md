@@ -1,5 +1,4 @@
 ---
-name: process
 description: Process unprocessed Claude Code sessions into your Second Brain
 ---
 

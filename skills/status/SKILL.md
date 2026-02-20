@@ -1,5 +1,4 @@
 ---
-name: status
 description: Show Remember Second Brain statistics and status
 ---
 
