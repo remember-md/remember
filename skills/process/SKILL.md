@@ -22,6 +22,33 @@ Reads unprocessed Claude Code transcripts and routes valuable content into your 
 
 ---
 
+## 🎯 Core Principles
+
+### 1. **Never Overwrite Newer Data with Old Sessions**
+
+When processing sessions older than today:
+- ✅ **Append** new information at the end
+- ✅ **Expand** existing sections with bullets
+- ❌ **Never replace** entire sections
+- ❌ **Never delete** existing content
+
+**Why:** Files may have been updated after the session date. Old sessions must respect newer information.
+
+**How:** Check `git log` for last modification date. If file modified AFTER session → append only.
+
+### 2. **Use Knowledge Index to Prevent Duplicates**
+
+Every session starts by building a knowledge index (Step 1). Use it throughout to:
+- Resolve existing entities (People, Projects, Notes)
+- Link properly with `[[wikilinks]]`
+- Avoid creating duplicate files
+
+### 3. **Respect User Instructions (REMEMBER.md)**
+
+User's REMEMBER.md overrides default routing. Always check it in Step 1b.
+
+---
+
 ## Step 1: Resolve Brain Path & Build Knowledge Index
 
 1. Read `$REMEMBER_BRAIN_PATH` env var (fallback `~/remember`). Call this `{brain}`.
@@ -72,6 +99,15 @@ node ${CLAUDE_PLUGIN_ROOT}/scripts/extract.js --source openclaw --unprocessed
 node ${CLAUDE_PLUGIN_ROOT}/scripts/extract.js --source claude-code --unprocessed
 ```
 
+**💡 Processing Order Recommendation:**
+
+When processing multiple old sessions, consider **newest-first** order to minimize conflicts:
+- Newer sessions update files first
+- Older sessions then append (anti-conflict rules apply)
+- Reduces risk of overwriting recent data
+
+Example: If you have sessions from Feb 5, 10, 15, 20 → process 20, 15, 10, 5.
+
 Show the list. Ask user which to process: **All**, **specific sessions by number**, or **Skip**.
 
 ## Step 3: Extract Each Session
@@ -111,7 +147,61 @@ Before classifying, check REMEMBER.md:
 ### 4c. Update EXISTING Files (Edit Tool)
 
 Use the `Edit` tool for surgical updates. Do NOT rewrite whole files.
-- Update frontmatter `updated:` field to SESSION_DATE (only if newer)
+
+**🚨 CRITICAL: Anti-Conflict Rule for Old Sessions**
+
+When processing sessions older than today, **NEVER overwrite existing content** — only append/expand:
+
+1. **Check file's last modification:**
+   ```bash
+   cd {brain} && git log -1 --format="%ai" -- path/to/file.md
+   ```
+   If file was modified AFTER session date → **append only, never replace**.
+
+2. **Safe operations:**
+   - ✅ **Append** new sections at the end
+   - ✅ **Expand** existing sections (add bullets, not replace)
+   - ✅ **Insert** new entries in chronological logs (e.g., Work Log)
+   - ❌ **Never replace** entire sections
+   - ❌ **Never delete** existing content
+
+3. **Journal entries:**
+   - Check if section already exists (e.g., "## Project X")
+   - If exists → append bullets at the end of that section
+   - If missing → create new section
+
+4. **Project logs:**
+   - Check if date entry exists (e.g., "### 2026-02-15")
+   - If exists AND file modified after session → skip or append sub-bullets
+   - If missing → insert in chronological order
+
+5. **Frontmatter `updated:` field:**
+   - Update ONLY if session date > current `updated:` value
+   - If current `updated:` is NEWER than session → leave unchanged
+
+**Example — Journal append (safe):**
+```markdown
+# Existing section
+- Existing bullet
+
+# New section from old session (appended)
+- New content
+```
+
+**Example — Project log insert (safe):**
+```markdown
+### 2026-02-20
+- Recent work
+
+### 2026-02-15  ← INSERT old session here
+- Old session details
+
+### 2026-02-10
+- Older work
+```
+
+**When in doubt:** Append, don't replace. Better to have duplicate context than lose new information.
+
 - See `reference.md` for per-type update patterns (People, Projects, Journal, Tasks, Areas)
 
 ### 4d. Create NEW Files (Write Tool)
@@ -145,21 +235,29 @@ Use `--source openclaw` for OpenClaw memory files, `--source claude-code` for Cl
 
 Report summary:
 ```
-Brain updated from {N} sessions:
+Brain updated from {N} sessions (SESSION_DATE):
 
 Created:
   - People/john-smith.md (new)
   - Notes/decision-api-architecture.md (new)
 
-Updated:
-  - Journal/2026-02-09.md (+2 sections)
-  - Projects/myproject/myproject.md (log entry)
+Updated (append-only, anti-conflict verified):
+  - Journal/2026-02-09.md (+2 sections, appended)
+  - Projects/myproject/myproject.md (log entry inserted chronologically)
   - Tasks/tasks.md (+3 tasks)
   - Persona.md (+2 evidence lines)
+
+Skipped (newer data exists):
+  - Journal/2026-02-15.md (last modified 2026-02-18, session 2026-02-10)
 
 Processed: {N} sessions
 Remaining unprocessed: {M}
 ```
+
+**Always mention:**
+- Session date being processed
+- Whether operations were append/expand (for old sessions)
+- Any files skipped due to conflict prevention
 
 ## Error Handling
 
