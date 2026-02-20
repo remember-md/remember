@@ -1,6 +1,6 @@
 {
   "name": "@remember-md/remember",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Portable knowledge base — one brain, every AI tool. Extract decisions, people, and insights from your AI sessions into organized local markdown.",
   "main": "index.js",
   "keywords": [
@@ -14,7 +14,7 @@
     "memory",
     "brain-dump"
   ],
-  "author": "Gabriel F. <gabi@codez.ro>",
+  "author": "Gabriel Fratica <gabriel@codez.ro>",
   "license": "MIT",
   "repository": {
     "type": "git",
