@@ -1,12 +1,40 @@
 {
   "name": "@remember-md/remember",
   "version": "2.0.0",
-  "description": "Portable knowledge base — one brain, every AI tool",
+  "description": "Portable knowledge base — one brain, every AI tool. Extract decisions, people, and insights from your AI sessions into organized local markdown.",
   "main": "index.js",
+  "keywords": [
+    "openclaw",
+    "plugin",
+    "knowledge-base",
+    "markdown",
+    "second-brain",
+    "note-taking",
+    "AI",
+    "memory",
+    "brain-dump"
+  ],
+  "author": "Gabriel F. <gabi@codez.ro>",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/remember-md/remember"
+    "url": "https://github.com/remember-md/remember.git"
+  },
+  "bugs": {
+    "url": "https://github.com/remember-md/remember/issues"
+  },
+  "homepage": "https://github.com/remember-md/remember#readme",
+  "files": [
+    "index.js",
+    "openclaw.plugin.json",
+    "scripts/",
+    "skills/",
+    "config.defaults.json",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
   },
   "openclaw": {
     "type": "plugin"
