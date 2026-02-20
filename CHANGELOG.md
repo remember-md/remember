@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.3] - 2026-02-20
+
+### Fixed
+
+- **Plugin config reading** — Plugin now reads `brainPath` from OpenClaw plugin config (`api.pluginConfig`)
+- **Config validation error** — Resolved issue where `brainPath` in configSchema was declared but never read
+- Fallback chain: pluginConfig.brainPath → `REMEMBER_BRAIN_PATH` env var → default `~/remember`
+- Existing scripts work unchanged (env var set automatically from config)
+
 ## [2.0.0] - 2026-02-20
 
 ### Breaking Changes

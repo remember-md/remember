@@ -29,7 +29,7 @@ const plugin = {
   id: 'remember',
   name: 'Remember',
   description: 'Portable knowledge base — one brain, every AI tool. Extract decisions, people, and insights from your AI sessions into organized local markdown.',
-  version: '2.0.0',
+  version: '2.0.3',
 
   configSchema: {
     type: 'object',
@@ -44,6 +44,14 @@ const plugin = {
   },
 
   register(api) {
+    // Read plugin config and set environment for scripts
+    const pluginCfg = api.pluginConfig || {};
+    const brainPath = pluginCfg.brainPath || process.env.REMEMBER_BRAIN_PATH || '~/remember';
+    const expandedPath = brainPath.startsWith('~')
+      ? path.join(require('os').homedir(), brainPath.slice(1))
+      : path.resolve(brainPath);
+    process.env.REMEMBER_BRAIN_PATH = expandedPath;
+
     // Hook: Inject Persona.md on session_start
     // (migrated from openclaw-hooks/persona-loader/handler.js)
     api.on('session_start', async (event) => {
