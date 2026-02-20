@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/session_start.sh",
+            "command": "node ${CLAUDE_PLUGIN_ROOT}/scripts/session_start.js",
             "timeout": 5
           }
         ]
@@ -16,8 +16,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/user_prompt.sh",
-            "timeout": 5
+            "command": "node ${CLAUDE_PLUGIN_ROOT}/scripts/user_prompt.js",
+            "timeout": 10
           }
         ]
       }

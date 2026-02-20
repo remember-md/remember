@@ -144,7 +144,7 @@ Remember organizes your knowledge base using PARA + Zettelkasten:
 
 ### Processing (Manual)
 
-`/remember:process` uses `scripts/extract.py` to:
+`/remember:process` uses `scripts/extract.js` to:
 1. Find unprocessed JSONL transcripts in `~/.claude/projects/`
 2. Extract clean user/assistant messages
 3. Route content to the right second brain location (People, Projects, Journal, Notes, Tasks)
@@ -261,8 +261,7 @@ The core plugin will always remain free and open source. Pro features are opt-in
 
 ## Requirements
 
-- Claude Code (latest version)
-- Python 3 (for session extraction)
+- Claude Code (latest version) — Node.js is bundled with Claude Code
 - Git (optional, for version control)
 
 ## Compatibility

@@ -18,7 +18,7 @@ Reads unprocessed Claude Code transcripts and routes valuable content into your 
 | Create files | `Write` tool | `bash echo >` |
 | Update files | `Edit` tool (old_string → new_string) | `bash sed` / rewrite |
 
-**Only use bash for:** running Python scripts (`extract.py`, `build_index.py`).
+**Only use bash for:** running Node.js scripts (`extract.js`, `build-index.js`).
 
 ---
 
@@ -28,7 +28,7 @@ Reads unprocessed Claude Code transcripts and routes valuable content into your 
 2. If directory doesn't exist → tell user to run `/remember:init` and stop.
 3. Run the knowledge index:
    ```bash
-   python3 ${CLAUDE_PLUGIN_ROOT}/scripts/build_index.py
+   node ${CLAUDE_PLUGIN_ROOT}/scripts/build-index.js
    ```
 4. **Read the output carefully.** This is your map of everything that exists. Use it throughout all remaining steps to prevent duplicates and enable smart linking.
 
@@ -56,12 +56,12 @@ If it defines a Custom Type → create files matching that specification.
 ## Step 2: Find Unprocessed Sessions
 
 ```bash
-python3 ${CLAUDE_PLUGIN_ROOT}/scripts/extract.py --unprocessed
+node ${CLAUDE_PLUGIN_ROOT}/scripts/extract.js --unprocessed
 ```
 
 With project filter:
 ```bash
-python3 ${CLAUDE_PLUGIN_ROOT}/scripts/extract.py --unprocessed --project <name>
+node ${CLAUDE_PLUGIN_ROOT}/scripts/extract.js --unprocessed --project <name>
 ```
 
 Show the list. Ask user which to process: **All**, **specific sessions by number**, or **Skip**.
@@ -70,7 +70,7 @@ Show the list. Ask user which to process: **All**, **specific sessions by number
 
 For each selected session:
 ```bash
-python3 ${CLAUDE_PLUGIN_ROOT}/scripts/extract.py <transcript_path>
+node ${CLAUDE_PLUGIN_ROOT}/scripts/extract.js <transcript_path>
 ```
 
 Note the `**Session date (use for journal/tasks):**` line — use THAT date for everything (journal filenames, frontmatter, last_contact, task dates). Never use today's date.
@@ -128,7 +128,7 @@ Skip if no clear patterns found. Better to miss than hallucinate.
 ## Step 5: Mark Processed & Report
 
 ```bash
-python3 ${CLAUDE_PLUGIN_ROOT}/scripts/extract.py --mark-processed <session_id>
+node ${CLAUDE_PLUGIN_ROOT}/scripts/extract.js --mark-processed <session_id>
 ```
 
 Report summary:

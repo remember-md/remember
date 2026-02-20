@@ -18,7 +18,7 @@ Immediate capture: when the user says "remember this", "save this", "brain dump"
 | Create files | `Write` tool | `bash echo >` |
 | Update files | `Edit` tool (old_string → new_string) | `bash sed` / rewrite |
 
-**Only use bash for:** running `build_index.py`.
+**Only use bash for:** running `build-index.js`.
 
 ---
 
@@ -27,7 +27,7 @@ Immediate capture: when the user says "remember this", "save this", "brain dump"
 ### Step 1: Get Knowledge Index
 
 ```bash
-python3 ${CLAUDE_PLUGIN_ROOT}/scripts/build_index.py --compact
+node ${CLAUDE_PLUGIN_ROOT}/scripts/build-index.js --compact
 ```
 
 Use this to prevent duplicates and enable smart linking.
