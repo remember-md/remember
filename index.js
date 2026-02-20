@@ -3,7 +3,7 @@ const path = require('path');
 const { getBrainRoot } = require('./scripts/config');
 const { formatCompact } = require('./scripts/build-index');
 
-const MAX_EVIDENCE_LINES = 10;
+const MAX_EVIDENCE_LINES = 20;
 
 function truncateEvidence(persona) {
   const evidenceHeader = /^###?\s*Evidence\s*Log/im;
