@@ -1,7 +1,6 @@
 # REMEMBER.md
-
-Instructions for how your Second Brain captures and processes knowledge.
-All sections are optional.
+Custom rules on top of remember plugin default instructions. 
+How your Second Brain captures and processes knowledge.
 
 ---
 
