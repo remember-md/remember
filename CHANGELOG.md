@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-02-20
+
+### Breaking Changes
+
+- **OpenClaw native plugin** — Migrated from hybrid Claude Code/OpenClaw plugin to pure OpenClaw plugin architecture
+- Requires OpenClaw 2026.2.17+ for proper plugin object pattern support
+
+### Fixed
+
+- **Plugin export pattern** — Changed from bare function export to plugin object with `id`, `name`, `description`, `version`, `configSchema`, and `register(api)` method (OpenClaw best practice)
+- **Hook registration** — Replaced non-existent `registerPluginHooksFromDir()` with `api.on('session_start', ...)` for Persona.md injection
+- Persona injection now properly registered via OpenClaw lifecycle hooks API
+- Removed SDK compatibility warning on plugin load
+
+### Changed
+
+- **Persona injection** — Inlined `truncateEvidence()` logic directly into session_start hook (removed dependency on `openclaw-hooks/` directory structure)
+- Tools (`remember_brain_dump_context`, `remember_brain_index`) now registered via `api.registerTool()` instead of standalone exports
+
+### Added
+
+- **npm package metadata** — Added keywords, author, files whitelist, publishConfig for npm publishing
+- `.npmignore` — Excludes development files, assets, Python cache from npm package
+- `openclaw.type: "plugin"` field in package.json for OpenClaw plugin registry
+
+### Removed
+
+- `openclaw-hooks/` directory logic (inlined into index.js)
+- Python cache files (`__pycache__/`)
+
 ## [1.6.0] - 2026-02-16
 
 ### Added
@@ -126,6 +156,7 @@ Complete redesign from OpenClaw skill to Claude Code plugin.
 
 Legacy versions as OpenClaw skill. See git history for details.
 
+[2.0.0]: https://github.com/remember-md/remember/releases/tag/v2.0.0
 [1.6.0]: https://github.com/remember-md/remember/releases/tag/v1.6.0
 [1.5.1]: https://github.com/remember-md/remember/releases/tag/v1.5.1
 [1.5.0]: https://github.com/remember-md/remember/releases/tag/v1.5.0
