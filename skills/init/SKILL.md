@@ -70,32 +70,9 @@ Create `{brain_path}/Persona.md` using template from `reference.md`.
 
 ### 4b. Create REMEMBER.md (if it doesn't exist)
 
-Create `{brain_path}/REMEMBER.md` with starter content:
-
-```markdown
-# REMEMBER.md
-
-Instructions for how your Second Brain captures and processes knowledge.
-All sections are optional.
-
----
-
-## Capture Rules
-
-## Processing
-
-## Custom Types
-
-## Connections
-
-## Language
-
-## Templates
-
-## Notes
-```
-
 **Skip if file exists** — user may have already customized it.
+
+Read the template from `assets/templates/remember.md` (relative to plugin root) and write it **verbatim** to `{brain_path}/REMEMBER.md`. Do NOT add examples, explanations, or any other content — the sections must remain empty so the user fills them in.
 
 **Note:** This creates the global REMEMBER.md. Users can also create a project-level `REMEMBER.md` in any project root for project-specific rules that layer on top of global preferences.
 
