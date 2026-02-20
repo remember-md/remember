@@ -55,24 +55,22 @@ If it defines a Custom Type → create files matching that specification.
 
 ## Step 2: Find Unprocessed Sessions
 
-Detect environment and use the appropriate source:
-
-**Claude Code:**
 ```bash
-node ${CLAUDE_PLUGIN_ROOT}/scripts/extract.js --source claude-code --unprocessed
+node ${CLAUDE_PLUGIN_ROOT}/scripts/extract.js --unprocessed
 ```
 
-**OpenClaw:**
-```bash
-node ${CLAUDE_PLUGIN_ROOT}/scripts/extract.js --source openclaw --unprocessed
-```
+This scans **all available sources** (Claude Code transcripts + OpenClaw memory files) and lists everything unprocessed. Each entry shows its `Source:` label.
 
 With project filter (Claude Code only):
 ```bash
-node ${CLAUDE_PLUGIN_ROOT}/scripts/extract.js --source claude-code --unprocessed --project <name>
+node ${CLAUDE_PLUGIN_ROOT}/scripts/extract.js --unprocessed --project <name>
 ```
 
-The `--source` flag defaults to auto-detect (OpenClaw if `OPENCLAW` env is set, otherwise Claude Code).
+To filter by source:
+```bash
+node ${CLAUDE_PLUGIN_ROOT}/scripts/extract.js --source openclaw --unprocessed
+node ${CLAUDE_PLUGIN_ROOT}/scripts/extract.js --source claude-code --unprocessed
+```
 
 Show the list. Ask user which to process: **All**, **specific sessions by number**, or **Skip**.
 
@@ -80,11 +78,10 @@ Show the list. Ask user which to process: **All**, **specific sessions by number
 
 For each selected session:
 ```bash
-node ${CLAUDE_PLUGIN_ROOT}/scripts/extract.js --source <source> <file_path>
+node ${CLAUDE_PLUGIN_ROOT}/scripts/extract.js <file_path>
 ```
 
-For OpenClaw, `<file_path>` is the memory file path (e.g., `~/.openclaw/workspace/memory/2026-02-20.md`).
-For Claude Code, it's the transcript JSONL path.
+Source is auto-detected from file extension (`.md` → OpenClaw, `.jsonl` → Claude Code).
 
 Note the `**Session date (use for journal/tasks):**` line — use THAT date for everything (journal filenames, frontmatter, last_contact, task dates). Never use today's date.
 
@@ -143,6 +140,8 @@ Skip if no clear patterns found. Better to miss than hallucinate.
 ```bash
 node ${CLAUDE_PLUGIN_ROOT}/scripts/extract.js --source <source> --mark-processed <session_id>
 ```
+
+Use `--source openclaw` for OpenClaw memory files, `--source claude-code` for Claude Code transcripts.
 
 Report summary:
 ```
