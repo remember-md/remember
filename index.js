@@ -29,7 +29,7 @@ const plugin = {
   id: 'remember',
   name: 'Remember',
   description: 'Portable knowledge base — one brain, every AI tool. Extract decisions, people, and insights from your AI sessions into organized local markdown.',
-  version: '2.0.5',
+  version: '2.0.6',
 
   configSchema: {
     type: 'object',
