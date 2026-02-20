@@ -1,0 +1,14 @@
+{
+  "name": "@remember-md/remember",
+  "version": "2.0.0",
+  "description": "Portable knowledge base — one brain, every AI tool",
+  "main": "index.js",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/remember-md/remember"
+  },
+  "openclaw": {
+    "extensions": ["./index.js"]
+  }
+}

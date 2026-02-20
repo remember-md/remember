@@ -1,0 +1,25 @@
+{
+  "id": "remember",
+  "name": "Remember",
+  "description": "Portable knowledge base — one brain, every AI tool. Extract decisions, people, and insights from your AI sessions into organized local markdown.",
+  "version": "2.0.0",
+  "repository": "github:remember-md/remember",
+  "skills": ["./skills"],
+  "configSchema": {
+    "type": "object",
+    "properties": {
+      "brainPath": {
+        "type": "string",
+        "default": "~/remember"
+      }
+    },
+    "additionalProperties": false
+  },
+  "uiHints": {
+    "brainPath": {
+      "label": "Brain directory",
+      "placeholder": "~/remember",
+      "help": "Path to your Remember brain (Obsidian vault). Defaults to ~/remember."
+    }
+  }
+}
